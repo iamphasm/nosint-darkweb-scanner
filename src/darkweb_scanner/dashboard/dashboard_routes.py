@@ -1714,7 +1714,7 @@ def api_dns_enrich(inv_id: int):
         headers={
             "X-API-Key": api_key,
             "Accept": "application/json",
-            "User-Agent": "OSINTPH-DNSCrawler/1.0",
+            "User-Agent": "NOsint-DNSCrawler/1.0",
         },
         timeout=20,
     )
@@ -1826,7 +1826,7 @@ def api_dns_certs(domain: str):
     try:
         resp = _requests.get(
             f"https://crt.sh/?q=%.{domain}&output=json",
-            headers={"User-Agent": "OSINTPH-DNSCrawler/1.0", "Accept": "application/json"},
+            headers={"User-Agent": "NOsint-DNSCrawler/1.0", "Accept": "application/json"},
             timeout=30,
             verify=False,
         )
@@ -2429,7 +2429,7 @@ window._ready = true;
             Paragraph(f'<font color="#f85149"><b>⬡</b></font>', S("logo", fontSize=28, leading=32, textColor=C_RED)),
             Table([
                 [Paragraph("Infrastructure Recon Report", s_h1)],
-                [Paragraph(f'<font color="#f85149">OSINT PH  ·  osintph.info</font>',
+                [Paragraph(f'<font color="#f85149">NOsint  ·  phasm.no</font>',
                             S("tl", fontSize=9, fontName="Helvetica-Bold", textColor=C_RED, leading=13))],
                 [Paragraph(f'Target: <font color="#58a6ff"><b>{domain}</b></font>  ·  '
                            f'Investigated: {created}  ·  Generated: {dt.utcnow().strftime("%Y-%m-%d %H:%M UTC")}',
@@ -2713,7 +2713,7 @@ window._ready = true;
             import requests as _req
             _cr = _req.get(
                 f"https://crt.sh/?q=%.{domain}&output=json",
-                headers={"User-Agent": "OSINTPH-PDFGen/1.0", "Accept": "application/json"},
+                headers={"User-Agent": "NOsint-PDFGen/1.0", "Accept": "application/json"},
                 timeout=20, verify=False,
             )
             if _cr.status_code == 200:
@@ -2982,8 +2982,8 @@ window._ready = true;
     story.append(HRFlowable(width=PW, thickness=0.5, color=C_BORDER))
     story.append(Spacer(1, 4))
     story.append(Paragraph(
-        f"CONFIDENTIAL — Infrastructure Recon Report  ·  OSINT PH / osintph.info  ·  "
-        f"Target: {domain}  ·  Report ID: OSINTPH-DNS-{inv_id}-{dt.utcnow().strftime('%Y%m%d')}",
+        f"CONFIDENTIAL — Infrastructure Recon Report  ·  NOsint / phasm.no  ·  "
+        f"Target: {domain}  ·  Report ID: NOsint-DNS-{inv_id}-{dt.utcnow().strftime('%Y%m%d')}",
         s_foot))
 
     doc.build(story, onFirstPage=dark_page, onLaterPages=dark_page)
@@ -2991,7 +2991,7 @@ window._ready = true;
     return Response(
         buf.read(),
         mimetype="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename=osintph-dns-{domain}-{dt.utcnow().strftime('%Y%m%d')}.pdf"},
+        headers={"Content-Disposition": f"attachment; filename=nosint-dns-{domain}-{dt.utcnow().strftime('%Y%m%d')}.pdf"},
     )
 
 
@@ -3443,7 +3443,7 @@ def proxy_threatfox():
         api_key = os.getenv("THREATFOX_API_KEY", "")
         headers = {
             "Content-Type": "application/json",
-            "User-Agent": "OSINTPH/1.0",
+            "User-Agent": "NOsint/1.0",
         }
         if api_key:
             headers["Auth-Key"] = api_key
@@ -3472,7 +3472,7 @@ def proxy_urlhaus():
         req = urllib.request.Request(
             "https://urlhaus-api.abuse.ch/v1/urls/recent/",
             data=body,
-            headers={"Content-Type": "application/x-www-form-urlencoded", "User-Agent": "OSINTPH/1.0"},
+            headers={"Content-Type": "application/x-www-form-urlencoded", "User-Agent": "NOsint/1.0"},
             method="POST",
         )
         ctx = ssl.create_default_context()
@@ -3520,7 +3520,7 @@ def whiteintel_alerts():
         headers={
             "Authorization": f"Bearer {api_key}",
             "Accept": "application/json",
-            "User-Agent": "OSINTPH/1.0",
+            "User-Agent": "NOsint/1.0",
         },
     )
     try:
@@ -3547,7 +3547,7 @@ def whiteintel_search():
         headers={
             "Authorization": f"Bearer {api_key}",
             "Accept": "application/json",
-            "User-Agent": "OSINTPH/1.0",
+            "User-Agent": "NOsint/1.0",
         },
     )
     try:

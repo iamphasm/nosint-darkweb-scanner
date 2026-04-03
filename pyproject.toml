@@ -84,9 +84,9 @@ all = [
 darkweb-scanner = "darkweb_scanner.main:main"
 
 [project.urls]
-Homepage = "https://github.com/osintph/darkweb-scanner"
-Repository = "https://github.com/osintph/darkweb-scanner"
-Issues = "https://github.com/osintph/darkweb-scanner/issues"
+Homepage = "https://github.com/iamphasm/nosint-darkweb-scanner"
+Repository = "https://github.com/iamphasm/nosint-darkweb-scanner"
+Issues = "https://github.com/iamphasm/nosint-darkweb-scanner/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]

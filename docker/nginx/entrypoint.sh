@@ -4,7 +4,7 @@ set -euo pipefail
 DOMAIN="${DOMAIN:-}"
 SSL_EMAIL="${SSL_EMAIL:-}"
 WWW_DOMAIN="${WWW_DOMAIN:-}"
-THREATWATCH_DOMAIN="${THREATWATCH_DOMAIN:-}"   # NEW: threatwatch.osintph.info
+THREATWATCH_DOMAIN="${THREATWATCH_DOMAIN:-}"   # threatwatch.phasm.no
 CERT_DIR="/etc/nginx/certs"
 mkdir -p "$CERT_DIR"
 
@@ -64,13 +64,13 @@ EOF
     cat >> /etc/nginx/conf.d/darkweb.conf <<EOF
 server {
     listen 80;
-    server_name ${WWW_DOMAIN} www.${WWW_DOMAIN} osintph.net www.osintph.net;
+    server_name ${WWW_DOMAIN} www.${WWW_DOMAIN};
     location /.well-known/acme-challenge/ { root /var/www/certbot; }
     location / { return 301 https://\$host\$request_uri; }
 }
 server {
     listen 443 ssl;
-    server_name ${WWW_DOMAIN} www.${WWW_DOMAIN} osintph.net www.osintph.net;
+    server_name ${WWW_DOMAIN} www.${WWW_DOMAIN};
     ssl_certificate     $CERT_DIR/www-cert.pem;
     ssl_certificate_key $CERT_DIR/www-key.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
@@ -82,7 +82,7 @@ server {
     add_header X-Frame-Options SAMEORIGIN always;
     add_header X-Content-Type-Options nosniff always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-    root /var/www/osintph-www;
+    root /var/www/nosint-www;
     index index.html;
     location / { try_files \$uri \$uri/ /index.html; }
     location ~* \.(svg|png|jpg|jpeg|gif|ico|webp|woff2?)$ {

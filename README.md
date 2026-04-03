@@ -1,261 +1,84 @@
-# 🔍 Dark Web Scanner — Cyber Threat Intelligence Platform
+# NOsint — Threat Intelligence Platform for Norway
 
-A self-hosted, open-source threat intelligence platform built for the Philippine and Southeast Asian security landscape. Crawls .onion networks, monitors Telegram channels, tracks ransomware groups, profiles threat actors, and delivers a daily intelligence digest — all from a single Docker deployment.
+An open-source, self-hosted threat intelligence platform focused on the Norwegian cybersecurity landscape.
 
-**Version: 1.0.1 · License: AGPL v3**
+NOsint is a rewrite and regional adaptation of the original [OSINT PH platform](https://github.com/osintph/darkweb-scanner) by Sigmund Brandstaetter, retargeted for Norway and the Nordic region.
 
----
-
-## ⚡ Quick Deploy
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/osintph/darkweb-scanner/main/deploy.sh -o /tmp/deploy.sh && sudo bash /tmp/deploy.sh
-```
-
-Works on Ubuntu 22.04/24.04, Debian, and most Debian-based distros. The script installs Docker, clones the repo, configures Tor, generates secrets, sets up Nginx with SSL, and starts all services automatically.
-
-> **Note:** After deployment, visit `https://YOUR_SERVER_IP/register` to create your admin account. Registration is only open when no users exist — it closes automatically after the first account is created.
-
-**With a real domain and SSL certificate:**
-```bash
-DOMAIN=scanner.yourdomain.com SSL_EMAIL=you@example.com \
-  curl -fsSL https://raw.githubusercontent.com/osintph/darkweb-scanner/main/deploy.sh -o /tmp/deploy.sh && \
-  sudo bash /tmp/deploy.sh
-```
+**Version: 1.1.0 · License: AGPL v3**
 
 ---
 
-## 🧩 Features
-
-- **Dark Web Crawler** — async Tor-based crawler for .onion sites, configurable keyword monitoring, real-time alerts
-- **Intelligence Dashboard** — new start page with live threat level, ransomware victim feed, group rankings, SEA country breakdown, ThreatFox IOC mini-feed, and press headlines
-- **ransomware.live PRO Integration** — full PRO API integration: 324+ tracked groups, 26,000+ victims, IOCs, negotiation chats, ransom notes, YARA rules, SEC 8-K filings, CSIRT directory
-- **IOC Feed** — live indicators of compromise from ThreatFox, URLhaus, and Feodo Tracker with search, type filtering, and confidence scoring
-- **Channel Monitor** — interactive dashboard tab to scrape any Telegram channel on demand, auto-translate messages to English, download results as a ZIP (HTML report + media)
-- **Telegram Scraper** — monitors public Telegram channels for keyword hits using the same engine as the crawler
-- **Projects** — scoped monitoring engagements with per-project keywords, target domains, entities, and hit tracking
-- **IP Investigation** — parallel AbuseIPDB + VirusTotal lookups with geolocation, ASN, and history
-- **Infrastructure Recon** — full passive + active DNS recon with DNSDumpster enrichment, active subdomain brute-force, TCP port scanning across 30 services, HTTP directory enumeration, certificate transparency history, zone transfer attempts, SPF/DMARC/DKIM email security scoring, interactive subdomain node graph, per-IP port heatmap, and PDF export with world map
-- **OSINT Toolkit** — seven proxied OSINT tools (Shodan, Censys, GreyNoise, URLScan, MXToolbox, SecurityTrails, VirusTotal) accessible directly from the dashboard
-- **Web Check** — on-demand OSINT analysis for any domain: SSL, headers, open ports, tech stack, WHOIS, and more
-- **Ransomware Tracker** — live tracking of 324+ ransomware groups powered by ransomware.live PRO with SEA/PH regional focus, victim counts, and SEA-targeting flags
-- **Threat Actor Profiles** — structured APT and cybercriminal profiles relevant to Southeast Asia
-- **Daily Digest** — morning email with CISA KEV, OTX pulses, abuse.ch feeds, and curated RSS — delivered via Mailgun
-- **Authentication** — bcrypt passwords, TOTP 2FA, optional Google/GitHub OAuth, role-based access control
-- **Multi-user** — admin and regular user roles, per-user project ownership
-
----
-
-## 🚀 Deployment
+## Installation
 
 ### Requirements
 
-- Fresh Linux server (Ubuntu 22.04/24.04 recommended)
-- 2GB RAM minimum (Chromium for PDF map rendering requires headroom)
-- Ports 80 and 443 open
-- A domain name (optional but recommended for trusted SSL)
+- A Linux server (Ubuntu 24.04 recommended)
+- A domain name pointing to your server (optional, required for SSL)
 
-### First-time setup after deploy
+### One-command deploy
 
-1. Visit `https://YOUR_SERVER_IP/register` and create your admin account
-2. Edit your configuration:
 ```bash
-nano ~/darkweb-scanner/.env
-nano ~/darkweb-scanner/config/keywords.yaml
-nano ~/darkweb-scanner/config/seeds.txt
-```
-3. Restart to apply config changes:
-```bash
-cd ~/darkweb-scanner && docker compose restart dashboard
+curl -fsSL https://raw.githubusercontent.com/iamphasm/nosint-darkweb-scanner/main/deploy.sh -o /tmp/deploy.sh && sudo bash /tmp/deploy.sh
 ```
 
-### Web Check (manual step — not in deploy.sh)
-
-Web Check runs as a separate service and must be set up manually after the main platform is deployed. See [docs/deployment.md](docs/deployment.md#web-check-integration) for full instructions.
+With domain and SSL:
 
 ```bash
-# Short version
-cd /root
-git clone https://github.com/lissy93/web-check.git
-cd web-check && BASE_URL=/ yarn install && yarn build
-cd /root/darkweb-scanner && docker compose up -d webcheck
+DOMAIN=yourdomain.no SSL_EMAIL=you@yourdomain.no sudo bash /tmp/deploy.sh
 ```
 
-Then issue an SSL cert for `webcheck.YOURDOMAIN` and reload nginx — full steps in the deployment docs.
+The script installs Docker, clones the repo, configures Tor, generates secrets, sets up Nginx with Let's Encrypt SSL, and registers an admin user. You will have a running dashboard in approximately 10 minutes.
 
-> **Note:** The dashboard nav bar contains a **🔍 Web Check** button hardcoded to `https://webcheck.osintph.info`. After deploying your own instance, update this URL in `src/darkweb_scanner/dashboard/templates/index.html` to point to your own webcheck subdomain.
-
-### Updating
+### Manual setup
 
 ```bash
-cd ~/darkweb-scanner
-git pull
-docker compose build --no-cache
+git clone https://github.com/iamphasm/nosint-darkweb-scanner.git
+cd nosint-darkweb-scanner
+cp .env.example .env
+# Edit .env with your API keys and domain
 docker compose up -d
 ```
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
-All configuration lives in `.env`. **Never commit this file.**
-
-### Essential variables
+Key `.env` variables:
 
 | Variable | Description |
 |----------|-------------|
-| `DASHBOARD_SECRET_KEY` | Flask session secret — change this |
-| `TOR_CONTROL_PASSWORD` | Auto-generated by deploy script |
+| `DOMAIN` | Your domain (e.g. `nti.phasm.no`) |
+| `SSL_EMAIL` | Email for Let's Encrypt |
 | `DATABASE_URL` | SQLite (default) or PostgreSQL |
+| `DIGEST_TIMEZONE` | Timezone for daily digest (default: `Europe/Oslo`) |
+| `MAILGUN_API_KEY` | Mailgun key for email delivery |
+| `ABUSEIPDB_API_KEY` | AbuseIPDB for IP investigation |
+| `VIRUSTOTAL_API_KEY` | VirusTotal for IP/domain lookups |
+| `OTX_API_KEY` | AlienVault OTX threat feeds |
+| `RANSOMWARE_LIVE_API_KEY` | Ransomware.live PRO API |
+| `HIBP_API_KEY` | Have I Been Pwned breach lookups |
+| `TELEGRAM_API_ID` / `TELEGRAM_API_HASH` | Telegram channel monitoring |
 
-### Threat intelligence feeds
-
-| Variable | Description |
-|----------|-------------|
-| `RANSOMWARE_LIVE_API_KEY` | **ransomware.live PRO — free forever at my.ransomware.live** — unlocks IOCs, negotiations, ransom notes, YARA rules, 3000 calls/day |
-| `THREATFOX_API_KEY` | ThreatFox (abuse.ch) — free at threatfox.abuse.ch — live IOC feed |
-| `WHITEINTEL_API_KEY` | WhiteIntel — free tier at whiteintel.io — credential exposure monitoring |
-| `OTX_API_KEY` | AlienVault OTX — free at otx.alienvault.com |
-| `ABUSEIPDB_API_KEY` | AbuseIPDB — free tier: 1,000 checks/day |
-| `VIRUSTOTAL_API_KEY` | VirusTotal — free tier: 4 req/min |
-| `DNSDUMPSTER_API_KEY` | DNSDumpster — for Infrastructure Recon enrichment |
-
-### Daily digest (Mailgun)
-
-| Variable | Description |
-|----------|-------------|
-| `MAILGUN_API_KEY` | Mailgun API key |
-| `MAILGUN_DOMAIN` | Your Mailgun sending domain |
-| `MAILGUN_FROM` | Sender address |
-
-### Telegram scraper
-
-| Variable | Description |
-|----------|-------------|
-| `TELEGRAM_API_ID` | From my.telegram.org/apps |
-| `TELEGRAM_API_HASH` | From my.telegram.org/apps |
-| `TELEGRAM_PHONE` | Your phone number with country code — required for Channel Monitor tab |
-| `TELEGRAM_CHANNELS` | Comma-separated channel usernames (no @) — used by background scraper |
+See `.env.example` for the full list.
 
 ---
 
-## 📡 Channel Monitor
+## Features
 
-The **Channel Monitor** tab lets you scrape any public Telegram channel on demand directly from the dashboard — no CLI required. It fetches messages, auto-detects and translates them to English, downloads media (photos and videos), and packages everything into a downloadable ZIP.
+> Features are documented here as they are verified working. This list grows with each release.
 
-### Setup
+- **Dark web scanner** — Crawls .onion sites over Tor, matches configurable keywords, stores hits with full context (URL, depth, surrounding text). Alerts via webhook or email on hits.
 
-Add the following to your `.env`:
-
-```env
-TELEGRAM_API_ID=12345678
-TELEGRAM_API_HASH=abcdef1234567890abcdef1234567890
-TELEGRAM_PHONE=+639XXXXXXXXX
-```
-
-### First-time authentication
-
-Telegram requires an interactive login the first time. Run this once on the server:
-
-```bash
-cd ~/darkweb-scanner
-docker compose exec dashboard python3 -c "
-import asyncio
-from telethon import TelegramClient
-import os
-from dotenv import load_dotenv
-load_dotenv('/app/.env')
-async def auth():
-    c = TelegramClient('/app/data/channel_monitor/channel_monitor', int(os.environ['TELEGRAM_API_ID']), os.environ['TELEGRAM_API_HASH'])
-    await c.start(phone=os.environ['TELEGRAM_PHONE'])
-    print('Auth OK:', (await c.get_me()).username)
-    await c.disconnect()
-asyncio.run(auth())
-"
-```
-
-Enter the OTP sent to your Telegram app when prompted. The session persists across restarts — you only need to do this once.
+*(More features will be documented as they are verified in the Norwegian deployment)*
 
 ---
 
-## 📁 Project Structure
+## Credits
 
-```
-config/
-  keywords.yaml        # keyword monitoring rules
-  seeds.txt            # .onion seed URLs for the crawler
-docs/                  # feature documentation
-src/darkweb_scanner/
-  crawler.py           # async Tor crawler
-  scanner.py           # keyword matching engine
-  storage.py           # SQLAlchemy models and storage layer
-  feeds.py             # OTX, CISA, abuse.ch, RSS feeds
-  digest.py            # daily email digest
-  dns_crawler.py       # DNS recon + subdomain brute-force + port scan + dir enum
-  ip_lookup.py         # IP investigation module
-  ransomware_live.py   # ransomware.live PRO API client (NEW)
-  telegram_scraper.py  # Telegram channel scraper (keyword hit pipeline)
-  channel_monitor.py   # Telegram channel monitor (on-demand scrape + translate)
-  threat_actors.py     # threat actor profile data
-  ransomware_data.py   # local ransomware group data (merged with live API)
-  dashboard/
-    app.py             # Flask application factory
-    auth_routes.py     # login, register, TOTP, OAuth
-    dashboard_routes.py # all API and dashboard routes + proxy endpoints
-    ransomware_live_routes.py # ransomware.live PRO API routes (NEW)
-    channel_monitor_routes.py # Channel Monitor API routes + job runner
-    templates/
-      index.html       # single-page dashboard UI
-docker/
-  app/Dockerfile
-  tor/Dockerfile
-  nginx/               # nginx with auto SSL entrypoint
-deploy.sh              # zero-prerequisite deployment script
-```
+Based on the original [OSINT PH darkweb-scanner](https://github.com/osintph/darkweb-scanner) by Sigmund Brandstaetter — an open-source threat intelligence platform built for the Philippine cybersecurity landscape. This project adapts and extends that work for Norway and the Nordic region.
 
 ---
 
-## 🔧 Useful Commands
+## License
 
-```bash
-# Run from ~/darkweb-scanner
-
-make scan          # run a crawl (foreground)
-make check-tor     # verify Tor connectivity
-make stats         # show scan statistics
-make hits          # show recent keyword hits
-make logs          # tail all container logs
-make stop          # stop all containers
-```
-
----
-
-## 🗺️ Roadmap
-
-- WhiteIntel full dashboard integration (credential exposure per domain)
-- Breach data search (HIBP integration)
-- Custom port scan wordlist upload via dashboard
-- Scheduled / recurring DNS recon jobs
-- Mobile interface
-- Expanded SEA/PH threat actor profiles and keyword coverage
-- Ransomware group detail modal with full ransomware.live PRO data
-
----
-
-## 📄 License
-
-Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-only).
-
-You may use, modify, and distribute this software. If you run a modified version as a network service, you must make the source code available to users of that service.
-
-See the [LICENSE](LICENSE) file for the full text.
-
----
-
-## 🤝 Contributing
-
-Pull requests are welcome. If you're a Philippine or Southeast Asian security researcher and want to collaborate on keyword lists, threat actor data, or regional intelligence coverage — please reach out.
-
-Issues and feature requests: https://github.com/osintph/darkweb-scanner/issues
-
-OSINT PH: https://www.osintph.info
+[AGPL v3](LICENSE)
