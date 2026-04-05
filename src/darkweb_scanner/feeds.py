@@ -15,19 +15,18 @@ logger = logging.getLogger(__name__)
 OTX_API_KEY = os.getenv("OTX_API_KEY", "")
 REQUEST_TIMEOUT = 15
 
-SEA_COUNTRIES = ["philippines", "thailand", "indonesia", "malaysia", "vietnam",
-                  "singapore", "myanmar", "cambodia", "laos", "brunei"]
-SEA_KEYWORDS = SEA_COUNTRIES + [
-    "ph ", "phl", "asean", "sea ", "south east asia", "southeast asia",
-    "manila", "jakarta", "bangkok", "kuala lumpur", "phcert", "cert-ph",
-    "lockbit", "ransomhub", "dragonforce", "akira", "apt40", "apt41",
-    "mustang panda", "lazarus", "volt typhoon", "earth lusca",
+NORDIC_COUNTRIES = ["norway", "norge"]
+NORDIC_KEYWORDS = NORDIC_COUNTRIES + [
+    "oslo", "bergen", "trondheim", "stavanger", "norcert", "ncsc-no",
+    "apt28", "apt29", "sandworm", "turla", "killnet", "noname057",
+    "equinor", "norsk hydro", "telenor", "dnb", "statnett",
+    "norwegian", "nordic", "skandinavisk",
 ]
 
 
-def _is_sea_relevant(text: str) -> bool:
+def _is_nordic_relevant(text: str) -> bool:
     t = text.lower()
-    return any(kw in t for kw in SEA_KEYWORDS)
+    return any(kw in t for kw in NORDIC_KEYWORDS)
 
 
 def _safe_get(url: str, headers: dict = None, params: dict = None, timeout: int = REQUEST_TIMEOUT) -> Optional[dict]:
@@ -43,7 +42,7 @@ def _safe_get(url: str, headers: dict = None, params: dict = None, timeout: int 
 # ── OTX AlienVault ─────────────────────────────────────────────────────────────
 
 def fetch_otx_pulses(limit: int = 20) -> list[dict]:
-    """Fetch recent OTX threat pulses, prioritising SEA-relevant ones."""
+    """Fetch recent OTX threat pulses, prioritising Nordic-relevant ones."""
     if not OTX_API_KEY:
         logger.warning("OTX_API_KEY not set — skipping OTX feed")
         return []
@@ -71,20 +70,20 @@ def fetch_otx_pulses(limit: int = 20) -> list[dict]:
                 "author": p.get("author", {}).get("username", ""),
                 "url": f"https://otx.alienvault.com/pulse/{p.get('id', '')}",
                 "published": p.get("modified", ""),
-                "sea_relevant": _is_sea_relevant(
+                "nordic_relevant": _is_nordic_relevant(
                     p.get("name", "") + " " + p.get("description", "") + " " + " ".join(p.get("targeted_countries", []))
                 ),
             })
 
-    # Also fetch SEA-specific search
-    sea_data = _safe_get(
+    # Also fetch Nordic-specific search
+    nordic_data = _safe_get(
         "https://otx.alienvault.com/api/v1/search/pulses",
         headers=headers,
-        params={"q": "Philippines OR Indonesia OR Malaysia OR Thailand OR Vietnam OR ASEAN", "limit": 20},
+        params={"q": "Norway OR Norge OR NorCERT OR NCSC-NO OR Norwegian", "limit": 20},
     )
-    if sea_data:
+    if nordic_data:
         existing_titles = {r["title"] for r in results}
-        for p in sea_data.get("results", []):
+        for p in nordic_data.get("results", []):
             if p.get("name") not in existing_titles:
                 results.append({
                     "source": "AlienVault OTX",
@@ -98,12 +97,12 @@ def fetch_otx_pulses(limit: int = 20) -> list[dict]:
                     "author": p.get("author", {}).get("username", ""),
                     "url": f"https://otx.alienvault.com/pulse/{p.get('id', '')}",
                     "published": p.get("modified", ""),
-                    "sea_relevant": True,
+                    "nordic_relevant": True,
                 })
 
-    # Sort: SEA-relevant first, then by date
-    results.sort(key=lambda x: (not x["sea_relevant"], x["published"]), reverse=False)
-    results.sort(key=lambda x: not x["sea_relevant"])
+    # Sort: Nordic-relevant first, then by date
+    results.sort(key=lambda x: (not x["nordic_relevant"], x["published"]), reverse=False)
+    results.sort(key=lambda x: not x["nordic_relevant"])
     return results[:limit]
 
 
@@ -184,11 +183,11 @@ def fetch_urlhaus_recent(limit: int = 10) -> list[dict]:
             "threat": u.get("threat", ""),
             "tags": tags,
             "added": u.get("date_added", ""),
-            "sea_relevant": _is_sea_relevant(tag_str + " " + host),
+            "nordic_relevant": _is_nordic_relevant(tag_str + " " + host),
         })
 
-    # Prioritise SEA-relevant
-    results.sort(key=lambda x: not x["sea_relevant"])
+    # Prioritise Nordic-relevant
+    results.sort(key=lambda x: not x["nordic_relevant"])
     return results[:limit]
 
 
@@ -207,7 +206,7 @@ def fetch_feodo_c2s(limit: int = 10) -> list[dict]:
             "country": entry.get("country", ""),
             "first_seen": entry.get("first_seen", ""),
             "last_online": entry.get("last_online", ""),
-            "sea_relevant": entry.get("country", "").upper() in ["PH", "TH", "ID", "MY", "VN", "SG", "MM"],
+            "nordic_relevant": entry.get("country", "").upper() in ["NO", "SE", "DK", "FI", "IS"],
         })
     return results
 
@@ -270,7 +269,7 @@ def fetch_rss_items(days_back: int = 1, limit_per_source: int = 5) -> list[dict]
                 import re
                 desc = re.sub(r"<[^>]+>", "", desc)[:400]
 
-                sea_rel = _is_sea_relevant(title + " " + desc)
+                nordic_rel = _is_nordic_relevant(title + " " + desc)
 
                 all_items.append({
                     "source": source["name"],
@@ -278,7 +277,7 @@ def fetch_rss_items(days_back: int = 1, limit_per_source: int = 5) -> list[dict]
                     "title": title.strip(),
                     "url": link.strip(),
                     "description": desc.strip(),
-                    "sea_relevant": sea_rel,
+                    "nordic_relevant": nordic_rel,
                 })
                 count += 1
 
@@ -286,9 +285,9 @@ def fetch_rss_items(days_back: int = 1, limit_per_source: int = 5) -> list[dict]
             logger.warning(f"RSS fetch failed for {source['name']}: {e}")
             continue
 
-    # Sort: SEA-relevant + critical priority first
+    # Sort: Nordic-relevant + critical priority first
     priority_order = {"critical": 0, "high": 1, "medium": 2}
-    all_items.sort(key=lambda x: (not x["sea_relevant"], priority_order.get(x["priority"], 3)))
+    all_items.sort(key=lambda x: (not x["nordic_relevant"], priority_order.get(x["priority"], 3)))
     return all_items
 
 

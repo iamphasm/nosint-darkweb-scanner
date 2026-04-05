@@ -1,40 +1,36 @@
 # Paste Site Monitor
 
-The Paste Monitor polls public paste sites in near-real-time and scans new pastes for Philippine-specific patterns — mobile numbers, bank names, government domains, ID number formats, and card BINs. Because pastes are ephemeral and often disappear within hours, fast detection matters.
+The Paste Monitor polls public paste sites in near-real-time and scans new pastes for Nordic/Norwegian patterns — mobile numbers, bank names, government domains, national ID formats, and organization numbers. Because pastes are ephemeral and often disappear within hours, fast detection matters.
 
 ## How It Works
 
-Every 3–10 minutes (depending on source), the monitor fetches each site's recent/archive page, extracts new paste URLs, checks them against a `seen_pastes` database table to avoid re-scanning, fetches unseen pastes, and runs them through the PH pattern library. Hits are stored in `paste_hits` and appear in the Paste Monitor tab in the dashboard.
+Every 3–10 minutes (depending on source), the monitor fetches each site's recent/archive page, extracts new paste URLs, checks them against a `seen_pastes` database table to avoid re-scanning, fetches unseen pastes, and runs them through the Nordic pattern library. Hits are stored in `paste_hits` and appear in the Paste Monitor tab in the dashboard.
 
-## PH Pattern Library
+## Nordic Pattern Library
 
 | Pattern | Description | Example |
 |---------|-------------|---------|
-| `ph_mobile` | Philippine mobile numbers | `+639171234567`, `09171234567` |
-| `ph_domain` | Any `.ph` domain mention | `bdo.com.ph`, `dlsu.edu.ph` |
-| `ph_gov_domain` | Government domains | `bsp.gov.ph`, `dict.gov.ph` |
-| `ph_bank` | Philippine bank names | BDO, BPI, Metrobank, UnionBank, RCBC, Landbank, PNB, Security Bank, EastWest, PSBank, Chinabank |
-| `ph_sss` | SSS number format | `33-1234567-8` |
-| `ph_tin` | Tax Identification Number | `123-456-789`, `123-456-789-000` |
-| `ph_philhealth` | PhilHealth number | `01-234567890-1` |
-| `ph_card_bin` | PH-issued card BINs | First 6 digits matching known PH-issued Visa/Mastercard ranges |
-| `ph_postal` | Philippines/Pilipinas mentions | `Philippines`, `Pilipinas` |
+| `nordic_mobile` | Norwegian mobile numbers (+47, starting with 4 or 9) | `+4791234567`, `91234567` |
+| `nordic_tld` | Nordic country-code TLD domains (.no, .se, .dk, .fi, .is) | `equinor.no`, `riksdagen.se` |
+| `nordic_gov` | Norwegian government/municipality domains | `regjeringen.dep.no`, `oslo.kommune.no` |
+| `nordic_bank` | Nordic bank names | DNB, Nordea, SpareBank 1, Handelsbanken, Storebrand, Gjensidige |
+| `no_personnummer` | Norwegian national ID (DDMMYY + 5 digits, 11 total) | `010190 12345` |
+| `se_personnummer` | Swedish personal ID (YYYYMMDD-NNNN or YYMMDD[-+]NNNN) | `19900101-1234` |
+| `dk_cpr` | Danish CPR number (DDMMYY-NNNN) | `010190-1234` |
+| `no_orgnr` | Norwegian organization number (9 digits starting with 8 or 9) | `912 345 678` |
 
 ## Sources Monitored
 
 | Source | Poll Interval | Notes |
 |--------|---------------|-------|
-| Pastebin | 3 minutes | Archive page — most active paste site |
-| Rentry | 5 minutes | No rate limiting, recent page |
-| Pastes.io | 5 minutes | Public feed |
-| ControlC | 10 minutes | Recent pastes page |
+| Rentry | 5 minutes | No rate limiting, recent page confirmed working |
 
 ## Dashboard
 
 Navigate to the **📋 Paste Monitor** tab to view results.
 
 **Filters:**
-- Filter by source (Pastebin, Rentry, Pastes.io, ControlC)
+- Filter by source (Rentry)
 - Filter by pattern type
 
 **Stats row** shows total hits, total pastes scanned, pastes with hits, and per-source breakdown.
@@ -91,10 +87,10 @@ SELECT source, matched_pattern, count(*) FROM paste_hits GROUP BY source, matche
 
 ## Extending the Pattern Library
 
-Edit `src/darkweb_scanner/paste_monitor.py` and add to the `PH_PATTERNS` dict:
+Edit `src/darkweb_scanner/paste_monitor.py` and add to the `NORDIC_PATTERNS` dict:
 
 ```python
-PH_PATTERNS = {
+NORDIC_PATTERNS = {
     ...
     "your_pattern": re.compile(r'your_regex_here', re.IGNORECASE),
 }
@@ -139,5 +135,5 @@ SOURCE_SCRAPERS = {
 
 - Pastes larger than 500KB are skipped to avoid processing massive data dumps that would slow the monitor
 - Within a single paste, the same pattern+value combination is only recorded once to avoid flooding the hits table with duplicates
-- 0.5 second delay between fetches to avoid rate limiting
+- 0.3 second delay between fetches to avoid rate limiting
 - The `seen_pastes` table grows over time — it is safe to prune entries older than 30 days periodically

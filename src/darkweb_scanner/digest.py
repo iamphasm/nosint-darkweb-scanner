@@ -6,10 +6,11 @@ API keys loaded from environment only — never hardcoded.
 
 import logging
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 import requests
 
@@ -17,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 MAILGUN_API_KEY = os.getenv("MAILGUN_API_KEY", "")
 MAILGUN_DOMAIN = os.getenv("MAILGUN_DOMAIN", "intel.phasm.no")
+DIGEST_TZ = ZoneInfo(os.getenv("DIGEST_TIMEZONE", "Europe/Oslo"))
 MAILGUN_FROM = os.getenv("MAILGUN_FROM", "NOsint Threat Intel <digest@intel.phasm.no>")
 DATA_DIR = Path(os.getenv("DATA_DIR", "/app/data"))
 SUBSCRIBERS_FILE = DATA_DIR / "digest_subscribers.txt"
@@ -62,7 +64,7 @@ def build_digest_pdf(feed_data: dict, scanner_summary: dict = None, date: dateti
     from reportlab.platypus import HRFlowable, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
     if date is None:
-        date = datetime.utcnow() + timedelta(hours=8)
+        date = datetime.now(tz=DIGEST_TZ)
 
     date_str = date.strftime("%B %d, %Y")
     date_label = date.strftime("%Y-%m-%d")
@@ -106,7 +108,7 @@ def build_digest_pdf(feed_data: dict, scanner_summary: dict = None, date: dateti
     text_cell = Table(
         [[Paragraph("Daily Threat Intelligence", s_h1)],
          [Paragraph("powered by NOsint  ·  phasm.no", s_tagline)],
-         [Paragraph(f"Edition: {date_str} (PHT)  ·  Generated: {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}", s_meta)]],
+         [Paragraph(f"Edition: {date_str}  ·  Generated: {datetime.now(tz=timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}", s_meta)]],
         colWidths=[PW - 16 * mm],
     )
     text_cell.setStyle(TableStyle([
@@ -189,33 +191,33 @@ def build_digest_pdf(feed_data: dict, scanner_summary: dict = None, date: dateti
         story.append(kt)
 
     otx = feed_data.get("otx_pulses", [])
-    sea_otx = [p for p in otx if p.get("sea_relevant")]
-    other_otx = [p for p in otx if not p.get("sea_relevant")]
-    if sea_otx:
-        sec("🌏", "Philippines & SEA Threat Intelligence")
-        for p in sea_otx[:6]:
+    nordic_otx = [p for p in otx if p.get("nordic_relevant")]
+    global_otx = [p for p in otx if not p.get("nordic_relevant")]
+    if nordic_otx:
+        sec("🇳🇴", "Norway Threat Intelligence")
+        for p in nordic_otx[:6]:
             item_block(f"OTX · {p.get('author','')}", p.get("title",""), p.get("description",""),
                       p.get("url",""), p.get("tags",[])[:5], highlight=True)
-    if other_otx:
+    if global_otx:
         sec("🔭", "Global Threat Intelligence (OTX)")
-        for p in other_otx[:4]:
+        for p in global_otx[:4]:
             item_block(f"OTX · {p.get('author','')}", p.get("title",""), p.get("description",""),
                       p.get("url",""), p.get("tags",[])[:4])
 
     rss = feed_data.get("rss", [])
-    sea_rss = [r for r in rss if r.get("sea_relevant")]
-    other_rss = [r for r in rss if not r.get("sea_relevant")]
-    if sea_rss:
-        sec("📰", "SEA Cybersecurity News")
-        for r in sea_rss[:5]:
+    nordic_rss = [r for r in rss if r.get("nordic_relevant")]
+    global_rss = [r for r in rss if not r.get("nordic_relevant")]
+    if nordic_rss:
+        sec("📰", "Nordic Cybersecurity News")
+        for r in nordic_rss[:5]:
             item_block(r["source"], r["title"], r["description"], r.get("url",""), highlight=True)
-    if other_rss:
+    if global_rss:
         sec("🌐", "Global Cybersecurity News")
-        for r in other_rss[:5]:
+        for r in global_rss[:5]:
             item_block(r["source"], r["title"], r["description"], r.get("url",""))
 
     urlhaus = feed_data.get("urlhaus", [])
-    feodo = [f for f in feed_data.get("feodo", []) if f.get("sea_relevant")]
+    feodo = [f for f in feed_data.get("feodo", []) if f.get("nordic_relevant")]
     if urlhaus or feodo:
         sec("🦠", "Active Malware Infrastructure (IOCs)")
         if urlhaus:
@@ -239,7 +241,7 @@ def build_digest_pdf(feed_data: dict, scanner_summary: dict = None, date: dateti
             story.append(ut)
         if feodo:
             story.append(Spacer(1, 6))
-            story.append(Paragraph("SEA C2 Botnet IPs — Feodo Tracker (abuse.ch)", s_h3))
+            story.append(Paragraph("Nordic C2 Botnet IPs — Feodo Tracker (abuse.ch)", s_h3))
             fd = [["IP", "Port", "Malware", "Country"]]
             for f in feodo[:6]:
                 ip_link = Paragraph(
@@ -272,9 +274,9 @@ def build_digest_pdf(feed_data: dict, scanner_summary: dict = None, date: dateti
 
 def build_email_html(feed_data: dict, date_str: str, stats: dict) -> str:  # noqa: ARG001
     kev = feed_data.get("cisa_kev", [])
-    sea_items = ([p for p in feed_data.get("otx_pulses", []) if p.get("sea_relevant")] +
-                 [r for r in feed_data.get("rss", []) if r.get("sea_relevant")])[:6]
-    global_items = [r for r in feed_data.get("rss", []) if not r.get("sea_relevant")][:5]
+    nordic_items = ([p for p in feed_data.get("otx_pulses", []) if p.get("nordic_relevant")] +
+                 [r for r in feed_data.get("rss", []) if r.get("nordic_relevant")])[:6]
+    global_items = [r for r in feed_data.get("rss", []) if not r.get("nordic_relevant")][:5]
 
     # Build KEV rows — no nested f-strings (Python 3.11 compat)
     kev_row_parts = []
@@ -330,11 +332,11 @@ def build_email_html(feed_data: dict, date_str: str, stats: dict) -> str:  # noq
         f'{kev_rows}</table></div>'
     )
 
-    sea_section = "" if not sea_items else (
+    nordic_section = "" if not nordic_items else (
         f'<div style="padding:16px 20px 0">'
-        f'<div style="font-size:14px;font-weight:700;color:#0d1117;margin-bottom:8px">&#x1F1F5;&#x1F1ED; Philippines &amp; SEA Focus</div>'
+        f'<div style="font-size:14px;font-weight:700;color:#0d1117;margin-bottom:8px">&#x1F1F3;&#x1F1F4; Norway Focus</div>'
         f'<table style="width:100%;border-collapse:collapse;border:1px solid #d0d7de">'
-        f'{news_rows(sea_items, True)}</table></div>'
+        f'{news_rows(nordic_items, True)}</table></div>'
     )
 
     global_section = "" if not global_items else (
@@ -351,7 +353,7 @@ def build_email_html(feed_data: dict, date_str: str, stats: dict) -> str:  # noq
         f'<div style="font-size:12px;color:#f85149;font-weight:700;margin-bottom:6px">powered by NOsint</div>'
         f'<div style="font-size:11px;color:#8b949e">{date_str} \u00b7 Full report attached as PDF</div>'
         f'</div>'
-        f'{kev_section}{sea_section}{global_section}'
+        f'{kev_section}{nordic_section}{global_section}'
         f'<div style="padding:14px 20px 16px;background:#0d1117;margin-top:10px">'
         f'<p style="color:#8b949e;font-size:11px;margin:0">CONFIDENTIAL \u00b7 '
         f'<a href="https://phasm.no" style="color:#f85149">phasm.no</a> \u00b7 '
@@ -369,7 +371,7 @@ def send_digest(storage, recipients: list = None, date: datetime = None) -> dict
     if not recipients:
         return {"ok": False, "error": "No subscribers configured"}
     if date is None:
-        date = datetime.utcnow() + timedelta(hours=8)
+        date = datetime.now(tz=DIGEST_TZ)
 
     date_str = date.strftime("%B %d, %Y")
     date_label = date.strftime("%Y-%m-%d")

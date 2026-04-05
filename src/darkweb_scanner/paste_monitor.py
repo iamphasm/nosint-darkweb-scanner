@@ -1,5 +1,5 @@
 """
-Paste site monitor — polls public paste sites for PH-specific patterns.
+Paste site monitor — polls public paste sites for Nordic/Norwegian patterns.
 Only includes sources verified to work without API keys or IP whitelisting.
 
 Working sources:
@@ -32,27 +32,37 @@ POLL_HEADERS = {
     "Accept-Language": "en-US,en;q=0.5",
 }
 
-# ── PH pattern definitions ─────────────────────────────────────────────────────
+# ── Nordic pattern definitions ──────────────────────────────────────────────────
 
-PH_PATTERNS = {
-    "ph_mobile":      re.compile(r'(\+63|0)(9\d{2}[-\s]?\d{3}[-\s]?\d{4})', re.IGNORECASE),
-    "ph_domain":      re.compile(r'\b[\w.-]+\.ph\b', re.IGNORECASE),
-    "ph_gov_domain":  re.compile(r'\b[\w.-]+\.gov\.ph\b', re.IGNORECASE),
-    "ph_bank":        re.compile(
-        r'\b(BDO|BPI|Metrobank|UnionBank|RCBC|Landbank|LBP|PNB|'
-        r'Security\s*Bank|EastWest|PSBank|Chinabank|China\s*Bank|'
-        r'Allied\s*Bank|Philippine\s*National\s*Bank|'
-        r'Banco\s*de\s*Oro|Bank\s*of\s*the\s*Philippine\s*Islands)\b',
+NORDIC_PATTERNS = {
+    # Norwegian mobile: +47 followed by 8 digits starting with 4 or 9
+    "nordic_mobile":    re.compile(r'(\+47[\s-]?)?[49]\d{7}\b'),
+    # Nordic country-code TLDs
+    "nordic_tld":       re.compile(r'\b[\w.-]+\.(no|se|dk|fi|is)\b', re.IGNORECASE),
+    # Norwegian government/municipality domains
+    "nordic_gov":       re.compile(r'\b[\w.-]+\.(dep|kommune|stat|mil)\.no\b', re.IGNORECASE),
+    # Nordic/Norwegian bank names
+    "nordic_bank":      re.compile(
+        r'\b(DNB|Nordea|SpareBank\s*1?|Handelsbanken|Santander\s*Bank|'
+        r'Storebrand|Gjensidige|KLP|Kommunalbanken|Sbanken|Bulder\s*Bank|'
+        r'Norwegian\s*Bank)\b',
         re.IGNORECASE,
     ),
-    "ph_sss":         re.compile(r'\b\d{2}-\d{7}-\d\b'),
-    "ph_tin":         re.compile(r'\b\d{3}-\d{3}-\d{3}(-\d{3})?\b'),
-    "ph_philhealth":  re.compile(r'\b\d{2}-\d{9}-\d\b'),
-    "ph_card_bin":    re.compile(
-        r'\b(4142|4143|4144|4145|4766|4767|4609|4580|'
-        r'5299|5457|5180|5429|5392|5438)\d{10,12}\b'
+    # Norwegian personnummer: DDMMYY + 5 digits (11 digits total)
+    "no_personnummer":  re.compile(
+        r'\b(0[1-9]|[12]\d|3[01])(0[1-9]|1[0-2])\d{2}[\s-]?\d{5}\b'
     ),
-    "ph_postal":      re.compile(r'\bPhilippines?\b|\bPilipinas?\b', re.IGNORECASE),
+    # Swedish personnummer: YYYYMMDD-NNNN or YYMMDD[-+]\d{4}
+    "se_personnummer":  re.compile(
+        r'\b(?:(?:19|20)\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])|'
+        r'\d{6})[-+]\d{4}\b'
+    ),
+    # Danish CPR: DDMMYY-NNNN
+    "dk_cpr":           re.compile(
+        r'\b(0[1-9]|[12]\d|3[01])(0[1-9]|1[0-2])\d{2}-\d{4}\b'
+    ),
+    # Norwegian organization number: 9 digits starting with 8 or 9 (optionally spaced NNN NNN NNN)
+    "no_orgnr":         re.compile(r'\b[89]\d{2}[\s]?\d{3}[\s]?\d{3}\b'),
 }
 
 CONTEXT_WINDOW = 120  # chars around match to capture as context
@@ -100,11 +110,11 @@ def _extract_context(text: str, match) -> str:
 
 def scan_paste_content(text: str, url: str, paste_id: str,
                        source_name: str, storage) -> int:
-    """Scan paste text against PH patterns. Returns number of hits saved."""
+    """Scan paste text against Nordic patterns. Returns number of hits saved."""
     hits = 0
     seen_patterns = set()
 
-    for pattern_name, regex in PH_PATTERNS.items():
+    for pattern_name, regex in NORDIC_PATTERNS.items():
         for match in regex.finditer(text):
             key = (pattern_name, match.group(0)[:50])
             if key in seen_patterns:
@@ -268,7 +278,7 @@ def run_paste_monitor(storage, single_run: bool = False) -> dict:
             total_hits += hits
 
             if hits > 0:
-                logger.info(f"[{source.name}] {paste_id} — {hits} PH pattern hits")
+                logger.info(f"[{source.name}] {paste_id} — {hits} Nordic pattern hits")
 
             time.sleep(0.3)
 

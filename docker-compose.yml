@@ -72,6 +72,12 @@ services:
     networks:
       - scanner_net
     command: ["python", "-m", "darkweb_scanner.dashboard.app"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
 
   # ── Nginx SSL reverse proxy ─────────────────────────────────────────────────
   nginx:
@@ -79,7 +85,8 @@ services:
       context: ./docker/nginx
     restart: unless-stopped
     depends_on:
-      - dashboard
+      dashboard:
+        condition: service_healthy
     environment:
       - DOMAIN=${DOMAIN:-}
       - SSL_EMAIL=${SSL_EMAIL:-}

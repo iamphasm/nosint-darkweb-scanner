@@ -53,7 +53,7 @@ def rwlive_stats():
 def rwlive_groups():
     """
     All ransomware groups merged with local RANSOMWARE_GROUPS definitions.
-    ?sea=1  — SEA-targeting only
+    ?nordic=1  — Nordic-targeting only
     ?active=1 — active only
     """
     rw = _rw()
@@ -68,12 +68,12 @@ def rwlive_groups():
         slug_key = (g.get("slug") or g.get("name", "")).lower().replace(" ", "").replace("-", "")
         local = local_idx.get(slug_key)
         if local:
-            g["_sea_targeting"]  = local.get("targeting_sea", False)
-            g["_sea_victims"]    = local.get("sea_victims", [])
-            g["_local_ttps"]     = local.get("ttps", [])
-            g["_local_desc"]     = local.get("description", "")
-            g["_local_origin"]   = local.get("origin", "")
-            g["_local_keywords"] = local.get("keywords", [])
+            g["_nordic_targeting"] = local.get("targeting_nordic", False)
+            g["_nordic_victims"]   = local.get("nordic_victims", [])
+            g["_local_ttps"]       = local.get("ttps", [])
+            g["_local_desc"]       = local.get("description", "")
+            g["_local_origin"]     = local.get("origin", "")
+            g["_local_keywords"]   = local.get("keywords", [])
 
     live_names = {g.get("name", "").lower() for g in live_groups}
     for lg in LOCAL:
@@ -81,8 +81,8 @@ def rwlive_groups():
             lg["_local_only"] = True
             live_groups.append(lg)
 
-    if request.args.get("sea"):
-        live_groups = [g for g in live_groups if g.get("_sea_targeting") or g.get("targeting_sea")]
+    if request.args.get("nordic"):
+        live_groups = [g for g in live_groups if g.get("_nordic_targeting") or g.get("targeting_nordic")]
     if request.args.get("active"):
         live_groups = [g for g in live_groups if g.get("status", "").lower() == "active"]
 
@@ -101,21 +101,21 @@ def rwlive_group_detail(group_name: str):
 @rw_live_bp.route("/api/rwlive/victims/recent")
 @require_login
 def rwlive_victims_recent():
-    """?sea=1  ?limit=N (default 40, max 200)"""
+    """?nordic=1  ?limit=N (default 40, max 200)"""
     rw = _rw()
     limit   = min(int(request.args.get("limit", 40)), 200)
     victims = rw.get_recent_victims(limit=limit)
-    if request.args.get("sea"):
-        victims = [v for v in victims if (v.get("country") or "").upper() in rw.SEA_ISO2]
+    if request.args.get("nordic"):
+        victims = [v for v in victims if (v.get("country") or "").upper() in rw.NORDIC_ISO2]
     return _ok(victims)
 
 
-@rw_live_bp.route("/api/rwlive/victims/sea")
+@rw_live_bp.route("/api/rwlive/victims/nordic")
 @require_login
-def rwlive_sea_victims():
-    """All recent SEA victims deduplicated."""
+def rwlive_nordic_victims():
+    """All recent Nordic victims deduplicated."""
     limit = min(int(request.args.get("limit", 50)), 200)
-    return _ok(_rw().get_sea_victims(limit=limit))
+    return _ok(_rw().get_nordic_victims(limit=limit))
 
 
 @rw_live_bp.route("/api/rwlive/victims/search")
@@ -132,7 +132,7 @@ def rwlive_victims_search():
 @rw_live_bp.route("/api/rwlive/victims")
 @require_login
 def rwlive_victims():
-    """?group ?country ?sector ?year ?month ?query ?limit ?sea"""
+    """?group ?country ?sector ?year ?month ?query ?limit ?nordic"""
     rw    = _rw()
     group   = request.args.get("group")
     country = request.args.get("country")
@@ -141,8 +141,8 @@ def rwlive_victims():
     month   = request.args.get("month", type=int)
     query   = request.args.get("query")
     limit   = min(int(request.args.get("limit", 50)), 500)
-    if request.args.get("sea"):
-        return _ok(rw.get_sea_victims(limit=limit))
+    if request.args.get("nordic"):
+        return _ok(rw.get_nordic_victims(limit=limit))
     return _ok(rw.get_victims(
         group=group, country=country, sector=sector,
         year=year, month=month, query=query, limit=limit,
@@ -202,11 +202,11 @@ def rwlive_negotiation_chat(group_name: str, chat_id: str):
 @rw_live_bp.route("/api/rwlive/press/recent")
 @require_login
 def rwlive_press_recent():
-    """?country=ISO2  ?sea=1"""
+    """?country=ISO2  ?nordic=1"""
     rw      = _rw()
     country = request.args.get("country")
-    if request.args.get("sea"):
-        return _ok(rw.get_sea_press(limit=30))
+    if request.args.get("nordic"):
+        return _ok(rw.get_nordic_press(limit=30))
     return _ok(rw.get_press_recent(country=country))
 
 
@@ -273,10 +273,10 @@ def rwlive_csirt(country_code: str):
     return _ok(_rw().get_csirt(country_code))
 
 
-@rw_live_bp.route("/api/rwlive/csirt/sea/all")
+@rw_live_bp.route("/api/rwlive/csirt/nordic/all")
 @require_login
-def rwlive_sea_csirts():
-    return _ok(_rw().get_sea_csirts())
+def rwlive_nordic_csirts():
+    return _ok(_rw().get_nordic_csirts())
 
 
 # ── Sectors ────────────────────────────────────────────────────────────────────

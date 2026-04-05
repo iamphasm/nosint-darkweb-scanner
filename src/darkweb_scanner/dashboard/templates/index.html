@@ -130,7 +130,7 @@
     .badge-medium { background: rgba(210,153,34,.15); color: var(--yellow); border: 1px solid rgba(210,153,34,.3); }
     .badge-active { background: rgba(63,185,80,.12); color: var(--green); border: 1px solid rgba(63,185,80,.25); }
     .badge-disrupted { background: rgba(139,148,158,.12); color: var(--muted); border: 1px solid var(--border); }
-    .badge-sea { background: rgba(88,166,255,.12); color: var(--accent); border: 1px solid rgba(88,166,255,.25); }
+    .badge-nordic { background: rgba(88,166,255,.12); color: var(--accent); border: 1px solid rgba(88,166,255,.25); }
     .badge-type { background: rgba(188,140,255,.12); color: var(--purple); border: 1px solid rgba(188,140,255,.25); }
     .intel-desc { font-size: 0.78rem; color: var(--muted); line-height: 1.55; margin-bottom: 10px; }
     .intel-ttps { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
@@ -580,16 +580,16 @@
     .hd-press-title a{color:var(--text);text-decoration:none}
     .hd-press-title a:hover{color:var(--accent)}
     .hd-press-meta{font-size:.66rem;color:var(--muted)}
-    /* SEA flag */
-    .hd-sea-tag{font-size:.58rem;padding:1px 5px;border-radius:3px;background:rgba(88,166,255,.1);color:var(--accent);font-weight:700;margin-left:4px}
+    /* Nordic flag */
+    .hd-nordic-tag{font-size:.58rem;padding:1px 5px;border-radius:3px;background:rgba(88,166,255,.1);color:var(--accent);font-weight:700;margin-left:4px}
   </style>
 
   <!-- Hero -->
   <div class="hd-hero">
     <div class="hd-hero-top">
       <div>
-        <div class="hd-platform-name">OSINT<span>PH</span> Threat Intelligence</div>
-        <div class="hd-platform-sub">SEA-focused dark web monitoring · ransomware.live PRO · Real-time threat tracking</div>
+        <div class="hd-platform-name">NO<span>sint</span> Threat Intelligence</div>
+        <div class="hd-platform-sub">Nordic-focused dark web monitoring · ransomware.live PRO · Real-time threat tracking</div>
       </div>
       <div class="hd-tl-wrap">
         <div class="hd-tl-label">Regional Threat Level</div>
@@ -625,7 +625,7 @@
     </div>
   </div>
 
-  <!-- Row 2: IOCs + SEA breakdown + Quick Actions -->
+  <!-- Row 2: IOCs + Nordic breakdown + Quick Actions -->
   <div class="hd-grid">
     <div class="hd-card">
       <div class="hd-card-hdr">
@@ -636,15 +636,14 @@
     </div>
     <div class="hd-card">
       <div class="hd-card-hdr">
-        <div class="hd-card-title">🌏 SEA Victim Breakdown</div>
+        <div class="hd-card-title">🇳🇴 Nordic Victim Breakdown</div>
       </div>
       <div class="hd-card-body" id="hdSeaBars">
-        <div class="hd-bar-row"><div class="hd-bar-label">Philippines</div><div class="hd-bar-track"><div class="hd-bar-fill" style="width:0%;background:var(--red)" id="hdBarPH"></div></div><div class="hd-bar-count" id="hdCntPH">—</div></div>
-        <div class="hd-bar-row"><div class="hd-bar-label">Indonesia</div><div class="hd-bar-track"><div class="hd-bar-fill" style="width:0%;background:var(--orange)" id="hdBarID"></div></div><div class="hd-bar-count" id="hdCntID">—</div></div>
-        <div class="hd-bar-row"><div class="hd-bar-label">Malaysia</div><div class="hd-bar-track"><div class="hd-bar-fill" style="width:0%;background:var(--yellow)" id="hdBarMY"></div></div><div class="hd-bar-count" id="hdCntMY">—</div></div>
-        <div class="hd-bar-row"><div class="hd-bar-label">Thailand</div><div class="hd-bar-track"><div class="hd-bar-fill" style="width:0%;background:var(--accent)" id="hdBarTH"></div></div><div class="hd-bar-count" id="hdCntTH">—</div></div>
-        <div class="hd-bar-row"><div class="hd-bar-label">Vietnam</div><div class="hd-bar-track"><div class="hd-bar-fill" style="width:0%;background:var(--accent)" id="hdBarVN"></div></div><div class="hd-bar-count" id="hdCntVN">—</div></div>
-        <div class="hd-bar-row"><div class="hd-bar-label">Singapore</div><div class="hd-bar-track"><div class="hd-bar-fill" style="width:0%;background:var(--accent)" id="hdBarSG"></div></div><div class="hd-bar-count" id="hdCntSG">—</div></div>
+        <div class="hd-bar-row"><div class="hd-bar-label">Norway</div><div class="hd-bar-track"><div class="hd-bar-fill" style="width:0%;background:var(--red)" id="hdBarNO"></div></div><div class="hd-bar-count" id="hdCntNO">—</div></div>
+        <div class="hd-bar-row"><div class="hd-bar-label">Sweden</div><div class="hd-bar-track"><div class="hd-bar-fill" style="width:0%;background:var(--orange)" id="hdBarSE"></div></div><div class="hd-bar-count" id="hdCntSE">—</div></div>
+        <div class="hd-bar-row"><div class="hd-bar-label">Denmark</div><div class="hd-bar-track"><div class="hd-bar-fill" style="width:0%;background:var(--yellow)" id="hdBarDK"></div></div><div class="hd-bar-count" id="hdCntDK">—</div></div>
+        <div class="hd-bar-row"><div class="hd-bar-label">Finland</div><div class="hd-bar-track"><div class="hd-bar-fill" style="width:0%;background:var(--accent)" id="hdBarFI"></div></div><div class="hd-bar-count" id="hdCntFI">—</div></div>
+        <div class="hd-bar-row"><div class="hd-bar-label">Iceland</div><div class="hd-bar-track"><div class="hd-bar-fill" style="width:0%;background:var(--accent)" id="hdBarIS"></div></div><div class="hd-bar-count" id="hdCntIS">—</div></div>
         <div style="margin-top:8px;font-size:.65rem;color:var(--muted)">Based on ransomware.live victim data</div>
       </div>
     </div>
@@ -667,7 +666,7 @@
   <div class="hd-grid" style="grid-template-columns:1fr 1fr;margin-bottom:0">
     <div class="hd-card">
       <div class="hd-card-hdr">
-        <div class="hd-card-title">📰 Ransomware Press — SEA Focus</div>
+        <div class="hd-card-title">📰 Ransomware Press — Norway Focus</div>
         <button class="hd-card-action" onclick="hdLoadPress()">↻</button>
       </div>
       <div class="hd-card-body" id="hdPressFeed"><div style="color:var(--muted);font-size:.78rem">Loading press…</div></div>
@@ -1081,7 +1080,7 @@
       <button class="intel-filter-btn" onclick="filterRwRisk('critical', this)">🔴 Critical</button>
       <button class="intel-filter-btn" onclick="filterRwRisk('high', this)">🟠 High</button>
       <button class="intel-filter-btn" onclick="filterRwRisk('disrupted', this)">⚫ Disrupted</button>
-      <button class="intel-filter-btn" onclick="filterRwRisk('sea', this)">🌏 SEA Active</button>
+      <button class="intel-filter-btn" onclick="filterRwRisk('nordic', this)">🇳🇴 Nordic Active</button>
       <button class="intel-filter-btn" onclick="filterRwRisk('hits', this)">⚡ Has Hits</button>
       <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
         {% if is_admin %}<button class="btn btn-secondary" onclick="openAddIntelModal('ransomware')">+ Add Group</button>{% endif %}
@@ -1102,7 +1101,7 @@
       <button class="intel-filter-btn" onclick="filterTaType('nation-state', this)">🏴 Nation-State</button>
       <button class="intel-filter-btn" onclick="filterTaType('cybercriminal', this)">💰 Criminal</button>
       <button class="intel-filter-btn" onclick="filterTaType('hacktivist', this)">✊ Hacktivist</button>
-      <button class="intel-filter-btn" onclick="filterTaType('sea', this)">🌏 SEA Active</button>
+      <button class="intel-filter-btn" onclick="filterTaType('nordic', this)">🇳🇴 Nordic Active</button>
       <button class="intel-filter-btn" onclick="filterTaType('hits', this)">⚡ Has Hits</button>
       <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
         {% if is_admin %}<button class="btn btn-secondary" onclick="openAddIntelModal('threat-actor')">+ Add Actor</button>{% endif %}
@@ -1213,15 +1212,14 @@
         </select>
         <select id="pastePatternFilter" onchange="filterPasteHits()" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:.85rem">
           <option value="">All Patterns</option>
-          <option value="ph_mobile">PH Mobile</option>
-          <option value="ph_domain">.ph Domain</option>
-          <option value="ph_gov_domain">.gov.ph Domain</option>
-          <option value="ph_bank">PH Bank</option>
-          <option value="ph_sss">SSS Number</option>
-          <option value="ph_tin">TIN</option>
-          <option value="ph_philhealth">PhilHealth</option>
-          <option value="ph_card_bin">Card BIN</option>
-          <option value="ph_postal">PH Postal</option>
+          <option value="nordic_mobile">Nordic Mobile</option>
+          <option value="nordic_tld">Nordic TLD</option>
+          <option value="nordic_gov">Nordic Gov Domain</option>
+          <option value="nordic_bank">Nordic Bank</option>
+          <option value="no_personnummer">NO Personnummer</option>
+          <option value="se_personnummer">SE Personnummer</option>
+          <option value="dk_cpr">DK CPR</option>
+          <option value="no_orgnr">NO Org Number</option>
         </select>
       </div>
       <div style="display:flex;gap:8px">
@@ -2255,15 +2253,14 @@
 
   // ── Paste Monitor ──────────────────────────────────────────────────────────
   const PASTE_PATTERN_LABELS = {
-    ph_mobile:     '📱 PH Mobile',
-    ph_domain:     '🌐 .ph Domain',
-    ph_gov_domain: '🏛 .gov.ph',
-    ph_bank:       '🏦 PH Bank',
-    ph_sss:        '🪪 SSS',
-    ph_tin:        '🧾 TIN',
-    ph_philhealth: '🏥 PhilHealth',
-    ph_card_bin:   '💳 Card BIN',
-    ph_postal:     '📍 PH Postal',
+    nordic_mobile:    '📱 Nordic Mobile',
+    nordic_tld:       '🌐 Nordic TLD',
+    nordic_gov:       '🏛 Nordic Gov',
+    nordic_bank:      '🏦 Nordic Bank',
+    no_personnummer:  '🪪 NO Personnummer',
+    se_personnummer:  '🪪 SE Personnummer',
+    dk_cpr:           '🪪 DK CPR',
+    no_orgnr:         '🏢 NO Org Number',
   };
 
   const PASTE_SOURCE_COLORS = {
@@ -3256,7 +3253,7 @@
       if (rwRiskFilter === 'critical') return g.risk_level === 'critical';
       if (rwRiskFilter === 'high') return g.risk_level === 'high';
       if (rwRiskFilter === 'disrupted') return g.status === 'disrupted';
-      if (rwRiskFilter === 'sea') return g.targeting_sea;
+      if (rwRiskFilter === 'nordic') return g.targeting_nordic || g._nordic_targeting;
       if (rwRiskFilter === 'hits') return g.hit_count > 0;
       return true;
     });
@@ -3279,8 +3276,8 @@
         <div class="intel-badges">
           <span class="intel-badge badge-${g.risk_level}">${g.risk_level.toUpperCase()}</span>
           <span class="intel-badge badge-${g.status}">${g.status.toUpperCase()}</span>
-          ${g.targeting_sea ? '<span class="intel-badge badge-sea">🌏 SEA</span>' : ''}
-          ${g.sea_victims?.length ? `<span class="intel-badge badge-high">⚠ ${g.sea_victims.length} victim${g.sea_victims.length > 1 ? 's' : ''}</span>` : ''}
+          ${(g.targeting_nordic||g._nordic_targeting) ? '<span class="intel-badge badge-nordic">🇳🇴 Nordic</span>' : ''}
+          ${g.nordic_victims?.length ? `<span class="intel-badge badge-high">⚠ ${g.nordic_victims.length} victim${g.nordic_victims.length > 1 ? 's' : ''}</span>` : ''}
         </div>
         <div class="intel-desc">${esc(g.description.length > 160 ? g.description.slice(0,160)+'…' : g.description)}</div>
         <div class="intel-ttps">${(g.ttps||[]).slice(0,4).map(t => `<span class="ttp-tag">${esc(t)}</span>`).join('')}${(g.ttps||[]).length > 4 ? `<span class="ttp-tag" style="color:var(--accent)">+${g.ttps.length-4} more</span>` : ''}</div>
@@ -3342,7 +3339,7 @@
     const badgeHtml = [
       `<span class="intel-badge badge-${d.risk_level}">${d.risk_level.toUpperCase()}</span>`,
       `<span class="intel-badge badge-${d.status === 'active' ? 'active' : 'disrupted'}">${d.status.toUpperCase()}</span>`,
-      d.targeting_sea ? '<span class="intel-badge badge-sea">🌏 SEA</span>' : '',
+      (d.targeting_nordic||d._nordic_targeting) ? '<span class="intel-badge badge-nordic">🇳🇴 Nordic</span>' : '',
       d.type ? `<span class="intel-badge badge-type">${esc(d.type)}</span>` : '',
     ].filter(Boolean).join('');
     document.getElementById('modalBadges').innerHTML = `<div class="intel-badges" style="margin:0">${badgeHtml}</div>`;
@@ -3385,11 +3382,11 @@
       </div>`;
     }
 
-    // SEA Victims (ransomware)
-    if (d.sea_victims?.length) {
+    // Nordic Victims (ransomware)
+    if (d.nordic_victims?.length) {
       html += `<div class="intel-modal-section">
-        <div class="intel-modal-section-title">⚠ Known PH/SEA Victims</div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px">${d.sea_victims.map(v => `<span style="font-size:.78rem;color:var(--red);background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.2);padding:3px 8px;border-radius:4px">${esc(v)}</span>`).join('')}</div>
+        <div class="intel-modal-section-title">⚠ Known Nordic Victims</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">${d.nordic_victims.map(v => `<span style="font-size:.78rem;color:var(--red);background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.2);padding:3px 8px;border-radius:4px">${esc(v)}</span>`).join('')}</div>
       </div>`;
     }
 
@@ -3490,8 +3487,8 @@
     const rwFields = `
       <div class="form-row">
         <div style="display:flex;align-items:center;gap:8px;padding-top:20px">
-          <input type="checkbox" id="ai_targeting_sea" style="width:auto"/>
-          <label for="ai_targeting_sea" style="margin:0">Targeting SEA region</label>
+          <input type="checkbox" id="ai_targeting_nordic" style="width:auto"/>
+          <label for="ai_targeting_nordic" style="margin:0">Targeting Nordic region</label>
         </div>
       </div>
       <div class="form-row full">
@@ -3501,7 +3498,7 @@
         <div><label>TTPs <span class="hint">comma-separated</span></label><input type="text" id="ai_ttps" placeholder="e.g. RaaS, double extortion, phishing"/></div>
       </div>
       <div class="form-row full">
-        <div><label>Known Victims in SEA/PH <span class="hint">comma-separated</span></label><input type="text" id="ai_sea_victims" placeholder="e.g. PhilHealth, BSP"/></div>
+        <div><label>Known Nordic Victims <span class="hint">comma-separated</span></label><input type="text" id="ai_nordic_victims" placeholder="e.g. Norsk Hydro, Oslo municipality"/></div>
       </div>
       <div class="form-row full">
         <div><label>.onion Seeds <span class="hint">one per line</span></label><textarea id="ai_onion_seeds" rows="2" placeholder="http://example.onion"></textarea></div>
@@ -3521,8 +3518,8 @@
           </select>
         </div>
         <div style="display:flex;align-items:center;gap:8px;padding-top:20px">
-          <input type="checkbox" id="ai_targeting_sea" style="width:auto"/>
-          <label for="ai_targeting_sea" style="margin:0">Targeting SEA region</label>
+          <input type="checkbox" id="ai_targeting_nordic" style="width:auto"/>
+          <label for="ai_targeting_nordic" style="margin:0">Targeting Nordic region</label>
         </div>
       </div>
       <div class="form-row full">
@@ -3532,10 +3529,10 @@
         <div><label>Aliases <span class="hint">comma-separated</span></label><input type="text" id="ai_aliases" placeholder="e.g. APT99, SHADOW BEAR"/></div>
       </div>
       <div class="form-row full">
-        <div><label>Sectors Targeted <span class="hint">comma-separated</span></label><input type="text" id="ai_sectors" placeholder="e.g. government, finance, telecoms"/></div>
+        <div><label>Sectors Targeted <span class="hint">comma-separated</span></label><input type="text" id="ai_sectors" placeholder="e.g. government, finance, energy"/></div>
       </div>
       <div class="form-row full">
-        <div><label>Countries Targeted <span class="hint">comma-separated</span></label><input type="text" id="ai_countries_targeted" placeholder="e.g. Philippines, Indonesia, Vietnam"/></div>
+        <div><label>Countries Targeted <span class="hint">comma-separated</span></label><input type="text" id="ai_countries_targeted" placeholder="e.g. Norway, Sweden, Denmark"/></div>
       </div>
       <div class="form-row full">
         <div><label>TTPs <span class="hint">comma-separated</span></label><input type="text" id="ai_ttps" placeholder="e.g. spear phishing, living-off-the-land"/></div>
@@ -3568,11 +3565,11 @@
       name: get('ai_name'), slug: get('ai_slug'), origin: get('ai_origin'),
       first_seen: get('ai_first_seen'), status: get('ai_status'),
       risk_level: get('ai_risk_level'), description: get('ai_description'),
-      targeting_sea: checked('ai_targeting_sea'),
+      targeting_nordic: checked('ai_targeting_nordic'),
       ttps: get('ai_ttps'), keywords: get('ai_keywords'),
     };
     if (isRw) {
-      body.sea_victims = get('ai_sea_victims');
+      body.nordic_victims = get('ai_nordic_victims');
       body.onion_seeds = get('ai_onion_seeds');
     } else {
       body.type = get('ai_type');
@@ -3640,7 +3637,7 @@
       if (taTypeFilter === 'nation-state') return a.type === 'nation-state';
       if (taTypeFilter === 'cybercriminal') return a.type === 'cybercriminal';
       if (taTypeFilter === 'hacktivist') return a.type === 'hacktivist';
-      if (taTypeFilter === 'sea') return a.targeting_sea;
+      if (taTypeFilter === 'nordic') return a.targeting_nordic || a._nordic_targeting;
       if (taTypeFilter === 'hits') return a.hit_count > 0;
       return true;
     });
@@ -3665,7 +3662,7 @@
           <span class="intel-badge badge-${a.risk_level}">${a.risk_level.toUpperCase()}</span>
           <span class="intel-badge badge-type">${esc(a.type)}</span>
           <span class="intel-badge badge-${a.status === 'active' ? 'active' : 'disrupted'}">${a.status.toUpperCase()}</span>
-          ${a.targeting_sea ? '<span class="intel-badge badge-sea">🌏 SEA</span>' : ''}
+          ${(a.targeting_nordic||a._nordic_targeting) ? '<span class="intel-badge badge-nordic">🇳🇴 Nordic</span>' : ''}
         </div>
         ${a.aliases?.length ? `<div style="font-size:.71rem;color:var(--muted);margin-bottom:6px">Also known as: ${a.aliases.slice(0,3).map(al => esc(al)).join(', ')}${a.aliases.length > 3 ? ' +' + (a.aliases.length-3) + ' more' : ''}</div>` : ''}
         <div class="intel-desc">${esc(a.description.length > 160 ? a.description.slice(0,160)+'…' : a.description)}</div>
@@ -5308,49 +5305,49 @@
       const d = await r.json();
       if (!d.ok || !d.data.length) { el.innerHTML = '<div style="color:var(--muted);font-size:.78rem">No victim data</div>'; return; }
       hdVictimsData = d.data;
-      // Build SEA counts — fetch per country for accurate totals
-      const seaCounts = {};
+      // Build Nordic counts — fetch per country for accurate totals
+      const nordicCounts = {};
       try {
-        const seaReq = await fetch('/api/rwlive/victims/sea?limit=500');
-        const seaD   = await seaReq.json();
-        if (seaD.ok) {
-          seaD.data.forEach(v => {
+        const nordicReq = await fetch('/api/rwlive/victims/nordic?limit=500');
+        const nordicD   = await nordicReq.json();
+        if (nordicD.ok) {
+          nordicD.data.forEach(v => {
             const c = (v.country||'').toUpperCase();
-            seaCounts[c] = (seaCounts[c]||0) + 1;
+            nordicCounts[c] = (nordicCounts[c]||0) + 1;
           });
-          hdRenderSeaBars(seaCounts);
+          hdRenderSeaBars(nordicCounts);
         }
-      } catch(e) { console.warn('SEA counts failed', e); }
+      } catch(e) { console.warn('Nordic counts failed', e); }
       el.innerHTML = d.data.slice(0,10).map(v => {
         const date = (v.attackdate||'').slice(0,10);
-        const sea  = ['PH','TH','ID','MY','VN','SG','MM','KH','LA','BN'].includes((v.country||'').toUpperCase());
+        const isNordic = ['NO','SE','DK','FI','IS'].includes((v.country||'').toUpperCase());
         return `<div class="hd-victim-row">
           <span class="hd-victim-group">${esc(v.group||'?')}</span>
           <span class="hd-victim-name" title="${esc(v.victim||'')}">
-            ${esc(v.victim||v.website||'Unknown')}${sea ? '<span class="hd-sea-tag">SEA</span>' : ''}
+            ${esc(v.victim||v.website||'Unknown')}${isNordic ? '<span class="hd-nordic-tag">🇳🇴</span>' : ''}
           </span>
           <span class="hd-victim-country">${esc(v.country||'')}</span>
           <span class="hd-victim-date">${esc(date)}</span>
         </div>`;
       }).join('');
       // Update threat level
-      const seaCount = Object.values(seaCounts).reduce((a,b)=>a+b,0);
+      const nordicCount = Object.values(nordicCounts).reduce((a,b)=>a+b,0);
       const tlEl  = document.getElementById('hdThreatLevel');
       const tlSub = document.getElementById('hdThreatSub');
-      if (seaCount > 20) {
+      if (nordicCount > 20) {
         tlEl.className = 'hd-tl-badge hd-tl-high'; tlEl.textContent = '🔴 HIGH';
-        tlSub.textContent = seaCount + ' recent SEA victims detected';
-      } else if (seaCount > 5) {
+        tlSub.textContent = nordicCount + ' recent Nordic victims detected';
+      } else if (nordicCount > 5) {
         tlEl.className = 'hd-tl-badge hd-tl-elevated'; tlEl.textContent = '⚠ ELEVATED';
-        tlSub.textContent = seaCount + ' recent SEA victims detected';
+        tlSub.textContent = nordicCount + ' recent Nordic victims detected';
       } else {
-        tlSub.textContent = seaCount + ' recent SEA victims';
+        tlSub.textContent = nordicCount + ' recent Nordic victims';
       }
     } catch(e) { el.innerHTML = '<div style="color:var(--red);font-size:.78rem">Error loading victims: ' + esc(String(e)) + '</div>'; }
   }
 
   function hdRenderSeaBars(counts) {
-    const map = {PH:'PH',ID:'ID',MY:'MY',TH:'TH',VN:'VN',SG:'SG'};
+    const map = {NO:'NO',SE:'SE',DK:'DK',FI:'FI',IS:'IS'};
     const max = Math.max(1, ...Object.values(counts));
     for (const [iso, id] of Object.entries(map)) {
       const c = counts[iso]||0;
@@ -5372,16 +5369,16 @@
         .filter(g => (g.victims||0) > 0)
         .sort((a,b) => (b.victims||0)-(a.victims||0))
         .slice(0,10);
-      const seaSlugs = ['lockbit3','lockbit','ransomhub','akira','dragonforce','clop','cl0p','play','blackbasta','medusa','8base','hunters'];
+      const nordicSlugs = ['lockbit3','lockbit','ransomhub','akira','cl0p','clop','play','medusa','noname','hunters'];
       el.innerHTML = groups.map(g => {
         const vc    = (g.victims||0).toLocaleString();
         const slug  = (g.group||g.name||'').toLowerCase();
-        const isSEA = g._sea_targeting || seaSlugs.includes(slug);
+        const isNordic = g._nordic_targeting || nordicSlugs.includes(slug);
         const dot   = (g.victims||0) > 500 ? 'var(--red)' : (g.victims||0) > 100 ? 'var(--orange)' : 'var(--green)';
         return `<div class="hd-group-row" onclick="hdGoTo('ransomware')">
           <span class="hd-group-dot" style="background:${dot}"></span>
           <span class="hd-group-name">${esc(g.group||g.name||'')}</span>
-          ${isSEA ? '<span class="hd-sea-tag">SEA</span>' : ''}
+          ${isNordic ? '<span class="hd-nordic-tag">🇳🇴</span>' : ''}
           <span class="hd-group-victims">${vc}</span>
         </div>`;
       }).join('');
@@ -5415,7 +5412,7 @@
   async function hdLoadPress() {
     const el = document.getElementById('hdPressFeed');
     try {
-      const r = await fetch('/api/rwlive/press/recent?sea=1');
+      const r = await fetch('/api/rwlive/press/recent?nordic=1');
       const d = await r.json();
       const items = (d.ok ? d.data : []).slice(0,6);
       if (!items.length) {

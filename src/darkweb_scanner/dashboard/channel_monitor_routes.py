@@ -244,6 +244,18 @@ def api_cm_start():
                 _jobs[job_id]["log"].append(f"[✗] Fatal error: {e}")
                 _jobs[job_id]["log"].append(traceback.format_exc())
         finally:
+            # Cancel all pending Telethon tasks before closing to avoid
+            # "Task was destroyed but it is pending!" noise in Python 3.10+
+            try:
+                pending = asyncio.all_tasks(loop)
+                if pending:
+                    for task in pending:
+                        task.cancel()
+                    loop.run_until_complete(
+                        asyncio.gather(*pending, return_exceptions=True)
+                    )
+            except Exception:
+                pass
             loop.close()
 
     t = threading.Thread(target=run, daemon=True, name=f"cm_{job_id}")

@@ -19,13 +19,8 @@ RW_V2_BASE     = "https://api.ransomware.live/v2"
 API_KEY        = os.getenv("RANSOMWARE_LIVE_API_KEY", "")
 TIMEOUT        = 20
 
-SEA_ISO2 = {"PH", "TH", "ID", "MY", "VN", "SG", "MM", "KH", "LA", "BN", "TL"}
-SEA_NAMES = {
-    "PH": "Philippines", "TH": "Thailand",  "ID": "Indonesia",
-    "MY": "Malaysia",    "VN": "Vietnam",   "SG": "Singapore",
-    "MM": "Myanmar",     "KH": "Cambodia",  "LA": "Laos",
-    "BN": "Brunei",      "TL": "Timor-Leste",
-}
+NORDIC_ISO2 = {"NO"}
+NORDIC_NAMES = {"NO": "Norway"}
 
 
 def has_pro_key() -> bool:
@@ -165,16 +160,16 @@ def search_victims(keyword: str, limit: int = 50) -> list:
     return []
 
 
-def get_sea_victims(limit: int = 200) -> list:
-    """Fetch victims for all SEA countries combined."""
+def get_nordic_victims(limit: int = 200) -> list:
+    """Fetch victims for all Nordic countries combined."""
     seen  = set()
     out   = []
-    for iso2 in SEA_ISO2:
+    for iso2 in NORDIC_ISO2:
         for v in get_victims(country=iso2, limit=500):
             vid = v.get("id") or (str(v.get("victim","")) + str(v.get("attackdate","")))
             if vid not in seen:
                 seen.add(vid)
-                v["_sea_country"] = SEA_NAMES.get(iso2, iso2)
+                v["_nordic_country"] = NORDIC_NAMES.get(iso2, iso2)
                 out.append(v)
     out.sort(key=lambda x: x.get("attackdate", ""), reverse=True)
     return out[:limit]
@@ -259,15 +254,15 @@ def get_press_all(country: str = None, year: str = None, month: str = None) -> l
     return []
 
 
-def get_sea_press(limit: int = 30) -> list:
+def get_nordic_press(limit: int = 30) -> list:
     seen = set()
     out  = []
-    for iso2 in SEA_ISO2:
+    for iso2 in NORDIC_ISO2:
         for item in get_press_recent(country=iso2):
             key = item.get("url") or item.get("title", "")
             if key not in seen:
                 seen.add(key)
-                item["_sea_country"] = SEA_NAMES.get(iso2, iso2)
+                item["_nordic_country"] = NORDIC_NAMES.get(iso2, iso2)
                 out.append(item)
     out.sort(key=lambda x: x.get("date", ""), reverse=True)
     return out[:limit]
@@ -344,9 +339,9 @@ def get_csirt(country_code: str) -> Optional[dict]:
     return _get(f"/csirt/{country_code.upper()}")
 
 
-def get_sea_csirts() -> dict:
+def get_nordic_csirts() -> dict:
     out = {}
-    for iso2 in SEA_ISO2:
+    for iso2 in NORDIC_ISO2:
         data = get_csirt(iso2)
         if data:
             out[iso2] = data
@@ -372,8 +367,8 @@ def build_group_profile(group_name: str) -> dict:
         "negotiations": get_group_negotiations(group_name),
         "ransomnotes":  get_group_ransomnotes(group_name),
         "yara":         get_group_yara(group_name),
-        "sea_victims":  [v for v in get_victims(group=group_name, limit=100)
-                         if (v.get("country") or "").upper() in SEA_ISO2],
+        "nordic_victims":  [v for v in get_victims(group=group_name, limit=100)
+                            if (v.get("country") or "").upper() in NORDIC_ISO2],
         "fetched_at":   datetime.utcnow().isoformat(),
     }
 
@@ -384,7 +379,7 @@ def get_home_dashboard_data() -> dict:
     return {
         "stats":         get_stats(),
         "recent_victims": recent,
-        "sea_victims":   [v for v in recent if (v.get("country") or "").upper() in SEA_ISO2],
+        "nordic_victims":   [v for v in recent if (v.get("country") or "").upper() in NORDIC_ISO2],
         "press_recent":  get_press_recent()[:10],
         "has_pro_key":   has_pro_key(),
         "fetched_at":    datetime.utcnow().isoformat(),

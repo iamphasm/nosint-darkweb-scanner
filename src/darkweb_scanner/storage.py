@@ -257,7 +257,7 @@ class PasteHit(Base):
     paste_id = Column(String(200), nullable=False)
     url = Column(Text, nullable=False)
     source = Column(String(50), nullable=False)
-    matched_pattern = Column(String(100), nullable=False)  # pattern name e.g. ph_mobile
+    matched_pattern = Column(String(100), nullable=False)  # pattern name e.g. nordic_mobile
     matched_value = Column(String(500), nullable=True)     # the actual matched string
     context = Column(Text, nullable=True)
     found_at = Column(DateTime, default=datetime.utcnow)

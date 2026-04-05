@@ -1311,7 +1311,7 @@ def api_ransomware_groups():
         })
     enriched.sort(key=lambda g: (
         g["status"] != "active",
-        not g["targeting_sea"],
+        not g["targeting_nordic"],
         -g["hit_count"],
     ))
     return jsonify(enriched)
@@ -1337,13 +1337,13 @@ def api_ransomware_groups_add():
         "status": body["status"],
         "origin": body["origin"],
         "first_seen": body.get("first_seen", ""),
-        "targeting_sea": bool(body.get("targeting_sea", False)),
+        "targeting_nordic": bool(body.get("targeting_nordic", False)),
         "risk_level": body["risk_level"],
         "description": body["description"],
         "ttps": [t.strip() for t in body.get("ttps", "").split(",") if t.strip()],
         "keywords": [k.strip() for k in body.get("keywords", "").split(",") if k.strip()],
         "onion_seeds": [u.strip() for u in body.get("onion_seeds", "").split("\n") if u.strip()],
-        "sea_victims": [v.strip() for v in body.get("sea_victims", "").split(",") if v.strip()],
+        "nordic_victims": [v.strip() for v in body.get("nordic_victims", "").split(",") if v.strip()],
     }
     username = session.get("username", "admin")
     ok = storage.add_custom_intel("ransomware", entry["slug"], entry, created_by=username)
@@ -1440,7 +1440,7 @@ def api_threat_actors():
         })
     enriched.sort(key=lambda a: (
         a["risk_level"] not in ("critical", "high"),
-        not a["targeting_sea"],
+        not a["targeting_nordic"],
         -a["hit_count"],
     ))
     return jsonify(enriched)
@@ -1466,7 +1466,7 @@ def api_threat_actors_add():
         "status": body["status"],
         "origin": body["origin"],
         "first_seen": body.get("first_seen", ""),
-        "targeting_sea": bool(body.get("targeting_sea", False)),
+        "targeting_nordic": bool(body.get("targeting_nordic", False)),
         "risk_level": body["risk_level"],
         "description": body["description"],
         "aliases": [a.strip() for a in body.get("aliases", "").split(",") if a.strip()],
