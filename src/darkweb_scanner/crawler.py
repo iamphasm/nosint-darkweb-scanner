@@ -71,7 +71,7 @@ class Crawler:
                 continue
             absolute = urljoin(base_url, href)
             parsed = urlparse(absolute)
-            if parsed.scheme in ("http", "https") and parsed.netloc:
+            if parsed.scheme in ("http", "https") and parsed.netloc.endswith(".onion"):
                 links.append(self._normalize_url(absolute))
         return links
 
@@ -83,7 +83,7 @@ class Crawler:
         if normalized in self._visited:
             return False
         domain = self._get_domain(url)
-        if not domain:
+        if not domain or not domain.endswith(".onion"):
             return False
         if self.config.stay_on_domain and domain != origin_domain:
             return False
