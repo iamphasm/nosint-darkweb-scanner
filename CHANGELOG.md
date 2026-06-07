@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 The format follows **Keep a Changelog**. This project adheres to **Semantic Versioning**.
 
+## [1.0.2] - 2026-04-03
+
+### Changed
+- **Platform rebrand: OSINT PH → NOsint** — all branding, domain references, and User-Agent strings updated throughout the codebase
+- Domain changed from `osintph.info` to `phasm.no` (all subdomains updated)
+- GitHub repository renamed from `osintph/darkweb-scanner` to `iamphasm/nosint-darkweb-scanner`
+- User-Agent strings updated from `OSINTPH/*` to `NOsint/*`
+- Default email domain updated from `intel.osintph.info` to `intel.phasm.no`
+- PDF filenames, report IDs, and footers updated to reflect new brand
+- Regional focus retargeted from Southeast Asia (Philippines) to Norway/Nordic
+- README rewritten for Norwegian deployment context
+
 ## [1.0.1] - 2026-03-15
 
 ### Added
