@@ -156,8 +156,7 @@ class Alerter:
         results = []
         if self.config.webhook_enabled:
             results.append(self.send_webhook(hit))
-        if self.config.email_enabled:
-            results.append(self.send_email(hit))
+        # Email alerts for individual keyword hits are disabled; use the digest instead.
         if not results:
             logger.debug("No alerting channels configured")
         return any(results)

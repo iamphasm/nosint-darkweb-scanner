@@ -95,8 +95,16 @@ async def scrape_channels(
             channel_text = 0
             channel_hits = 0
 
+            # Skip private invite-link hashes (start with +) — these require joining
+            if channel.startswith("+"):
+                logger.warning(
+                    f"Skipping '{channel}': looks like a private invite link, not a public username. "
+                    "Only public channel usernames are supported."
+                )
+                continue
+
             try:
-                entity = await client.get_entity(channel)
+                entity = await client.get_entity(f"@{channel}")
                 async for message in client.iter_messages(
                     entity, limit=config.limit_per_channel
                 ):

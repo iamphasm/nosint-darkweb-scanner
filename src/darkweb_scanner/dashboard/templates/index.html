@@ -815,14 +815,14 @@
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
           <div class="form-group">
             <label>Target Name</label>
-            <input type="text" id="genName" placeholder="e.g. Philippine Health Insurance Corp" style="width:100%"/>
+            <input type="text" id="genName" placeholder="e.g. Norwegian Health Authority (Helsenorge)" style="width:100%"/>
           </div>
           <div class="form-group">
             <label>Domain</label>
-            <input type="text" id="genDomain" placeholder="e.g. philhealth.gov.ph" style="width:100%"/>
+            <input type="text" id="genDomain" placeholder="e.g. helsenorge.no" style="width:100%"/>
           </div>
           <div class="form-group">
-            <label>Industry <span style="color:var(--muted);font-size:.72rem">(bank, healthcare, government, telco, ecommerce, bpo, education)</span></label>
+            <label>Industry <span style="color:var(--muted);font-size:.72rem">(bank, healthcare, government, telco, ecommerce, energy, education)</span></label>
             <input type="text" id="genIndustry" placeholder="e.g. healthcare" style="width:100%"/>
           </div>
           <div class="form-group">
@@ -964,7 +964,11 @@
             <button class="btn btn-primary" onclick="addChannel()">+ Add Channel</button>
           </div>
           <div id="channelsList"><div class="empty"><div class="icon">&#x1F4F1;</div><p>Loading...</p></div></div>
-          <div class="info-banner">Run <code>make telegram-scan</code> on the server to scrape channels. First-time setup: <code>make telegram-auth</code></div>
+          <div style="display:flex;align-items:center;gap:12px;margin-top:14px">
+            <button class="btn btn-primary" id="telegramScanBtn" onclick="startTelegramScan()">&#x25B6; Scan Channels Now</button>
+            <span id="telegramScanStatus" style="font-size:.82rem;color:var(--muted)"></span>
+          </div>
+          <div class="info-banner" style="margin-top:10px">First-time setup: run <code>make telegram-auth</code> on the server once to authenticate.</div>
         </div>
       </div>
     </div>
@@ -1207,8 +1211,10 @@
           <option value="">All Sources</option>
           <option value="pastebin">Pastebin</option>
           <option value="rentry">Rentry</option>
+          <option value="hastebin">Hastebin</option>
+          <option value="ghostbin">Ghostbin</option>
+          <option value="psbdmp">psbdmp.ws</option>
           <option value="pastesio">Pastes.io</option>
-          <option value="controlc">ControlC</option>
         </select>
         <select id="pastePatternFilter" onchange="filterPasteHits()" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:.85rem">
           <option value="">All Patterns</option>
@@ -1224,8 +1230,9 @@
       </div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-secondary" onclick="loadPasteHits()">🔄 Refresh</button>
-        <button class="btn btn-primary admin-only" onclick="triggerPasteScan()" id="pasteScanBtn">▶ Scan Now</button>
+        <button class="btn btn-primary" onclick="triggerPasteScan()" id="pasteScanBtn">▶ Scan Now</button>
       </div>
+      <span id="pasteScanStatus" style="font-size:.8rem;color:var(--muted)"></span>
     </div>
 
     <!-- Stats row -->
@@ -2202,6 +2209,49 @@
     else toast(data.error||'Error','error');
   }
 
+  async function startTelegramScan() {
+    const btn = document.getElementById('telegramScanBtn');
+    const status = document.getElementById('telegramScanStatus');
+    btn.disabled = true;
+    status.textContent = 'Starting...';
+    try {
+      const res = await fetch('/api/telegram/scan', { method: 'POST' });
+      const data = await res.json();
+      if (data.ok) {
+        status.textContent = data.message;
+        pollTelegramStatus();
+      } else {
+        status.style.color = 'var(--danger)';
+        status.textContent = data.error || 'Error starting scan';
+        btn.disabled = false;
+      }
+    } catch(e) {
+      status.style.color = 'var(--danger)';
+      status.textContent = 'Request failed';
+      btn.disabled = false;
+    }
+  }
+
+  async function pollTelegramStatus() {
+    const btn = document.getElementById('telegramScanBtn');
+    const status = document.getElementById('telegramScanStatus');
+    try {
+      const data = await (await fetch('/api/telegram/scan/status')).json();
+      if (data.running) {
+        status.style.color = 'var(--muted)';
+        status.textContent = 'Running...';
+        btn.disabled = true;
+        setTimeout(pollTelegramStatus, 3000);
+      } else {
+        status.style.color = 'var(--success, green)';
+        status.textContent = 'Scan complete.';
+        btn.disabled = false;
+      }
+    } catch(e) {
+      btn.disabled = false;
+    }
+  }
+
   // ── Users ──────────────────────────────────────────────────────────────────
   async function loadUsers() {
     const el = document.getElementById('usersList');
@@ -2340,19 +2390,58 @@
     </table>`;
   }
 
+  let _pasteCountdownTimer = null;
+  let _pasteNextRun = null;
+
   async function triggerPasteScan() {
     const btn = document.getElementById('pasteScanBtn');
+    const statusEl = document.getElementById('pasteScanStatus');
     btn.disabled = true;
-    btn.textContent = '⏳ Scanning…';
-    const result = await apiFetch('/api/paste/scan', 'POST');
-    btn.disabled = false;
-    btn.textContent = '▶ Scan Now';
-    if (result && result.ok) {
-      toast(`Paste scan complete — ${result.scanned} pastes scanned, ${result.hits} hits found`);
-      loadPasteHits();
+    if (statusEl) { statusEl.style.color = 'var(--accent, #58a6ff)'; statusEl.textContent = 'Starting...'; }
+    const res = await apiFetch('/api/paste/scan', 'POST');
+    if (res && res.ok) {
+      if (statusEl) statusEl.textContent = 'Scanning...';
+      pollPasteScanStatus();
     } else {
-      toast('Scan failed — check logs');
+      btn.disabled = false;
+      if (statusEl) { statusEl.style.color = 'var(--danger, #f85149)'; statusEl.textContent = (res && res.error) || 'Failed'; }
     }
+  }
+
+  async function pollPasteScanStatus() {
+    const data = await apiFetch('/api/paste/scan/status');
+    if (!data) return;
+    if (data.running) {
+      setTimeout(pollPasteScanStatus, 3000);
+      return;
+    }
+    const btn = document.getElementById('pasteScanBtn');
+    const statusEl = document.getElementById('pasteScanStatus');
+    btn.disabled = false;
+    const last = data.last || {};
+    if (last.ok) {
+      toast('Paste scan complete — ' + (last.scanned || 0) + ' scanned, ' + (last.hits || 0) + ' hits');
+      loadPasteHits();
+    }
+    _pasteNextRun = Date.now() + 420000;
+    startPasteCountdown();
+  }
+
+  function startPasteCountdown() {
+    if (_pasteCountdownTimer) clearInterval(_pasteCountdownTimer);
+    _pasteCountdownTimer = setInterval(() => {
+      const el = document.getElementById('pasteScanStatus');
+      if (!el || !_pasteNextRun) return;
+      const secs = Math.max(0, Math.round((_pasteNextRun - Date.now()) / 1000));
+      if (secs === 0) {
+        clearInterval(_pasteCountdownTimer);
+        el.textContent = 'Auto-scanning...';
+      } else {
+        const m = Math.floor(secs / 60), s = secs % 60;
+        el.style.color = 'var(--muted)';
+        el.textContent = 'Next auto-scan in ' + m + 'm ' + String(s).padStart(2, '0') + 's';
+      }
+    }, 1000);
   }
 
   // ── Projects ───────────────────────────────────────────────────────────────

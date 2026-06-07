@@ -1,17 +1,17 @@
 """
 Paste site monitor — polls public paste sites for Nordic/Norwegian patterns.
-Only includes sources verified to work without API keys or IP whitelisting.
 
-Working sources:
-  - rentry.co/recent  (confirmed working)
-  - hastebin.com      (public recent endpoint)
-  - ghostbin.co       (public pastes)
-  - termbin.com       (raw pastes via scraping)
+Active sources:
+  - pastebin.com/archive  (public archive listing, no API key needed)
+  - rentry.co/recent      (confirmed working)
+  - pastes.io             (public pastes listing)
 
-Pastebin: blocks scrapers, API requires IP whitelist — excluded.
-psbdmp.ws: shutting down, all endpoints 404 — excluded.
-pastes.io: /public returns 404 — excluded.
-controlc.com: removed public recent page — excluded.
+Excluded:
+  - termbin.com: write-only netcat service, no public listing endpoint
+  - controlc.com: removed public recent page
+  - hastebin.com: returns errors (endpoint dead)
+  - ghostbin.com: domain dead
+  - psbdmp.ws: API down
 """
 import logging
 import re
@@ -85,10 +85,9 @@ class PasteSource:
 
 
 SOURCES = [
-    PasteSource("rentry",    "https://rentry.co/recent",        "https://rentry.co",       300),
-    # hastebin: requires auth (401)
-    # ghostbin: domain dead (DNS failure)
-    # pasty: requires auth (401)
+    PasteSource("pastebin",  "https://pastebin.com/archive",    "https://pastebin.com",  300),
+    PasteSource("rentry",    "https://rentry.co/recent",        "https://rentry.co",     300),
+    PasteSource("pastesio",  "https://pastes.io/public",        "https://pastes.io",     300),
 ]
 
 
@@ -137,6 +136,22 @@ def scan_paste_content(text: str, url: str, paste_id: str,
 
 # ── Source-specific scrapers ───────────────────────────────────────────────────
 
+def _get_pastebin_urls() -> list[tuple[str, str]]:
+    """Scrape pastebin.com/archive for recent public pastes."""
+    r = _safe_get("https://pastebin.com/archive")
+    if not r:
+        return []
+    soup = BeautifulSoup(r.text, "lxml")
+    results = []
+    for a in soup.find_all("a", href=True):
+        href = a["href"]
+        # Pastebin paste IDs: 8 alphanumeric chars
+        if re.match(r"^/[a-zA-Z0-9]{8}$", href):
+            paste_id = href.strip("/")
+            results.append((paste_id, f"https://pastebin.com/raw/{paste_id}"))
+    return results[:50]
+
+
 def _get_rentry_urls() -> list[tuple[str, str]]:
     r = _safe_get("https://rentry.co/recent")
     if not r:
@@ -153,59 +168,28 @@ def _get_rentry_urls() -> list[tuple[str, str]]:
     return results[:50]
 
 
-def _get_hastebin_urls() -> list[tuple[str, str]]:
-    # hastebin doesn't have a public recent page but we can try the documents endpoint
-    r = _safe_get("https://hastebin.com/recent")
+
+def _get_pastesio_urls() -> list[tuple[str, str]]:
+    r = _safe_get("https://pastes.io/public")
     if not r:
         return []
     soup = BeautifulSoup(r.text, "lxml")
     results = []
     for a in soup.find_all("a", href=True):
         href = a["href"]
-        if re.match(r"^/[a-z]{10}$", href):
+        # pastes.io slugs: alphanumeric, 6–16 chars
+        if re.match(r"^/[a-zA-Z0-9_-]{6,16}$", href) and href not in (
+            '/public', '/new', '/login', '/register', '/trending'
+        ):
             paste_id = href.strip("/")
-            results.append((paste_id, f"https://hastebin.com/raw/{paste_id}"))
-    return results[:30]
-
-
-def _get_ghostbin_urls() -> list[tuple[str, str]]:
-    r = _safe_get("https://ghostbin.com/recent")
-    if not r:
-        return []
-    soup = BeautifulSoup(r.text, "lxml")
-    results = []
-    for a in soup.find_all("a", href=True):
-        href = a["href"]
-        if re.match(r"^/paste/[a-z0-9]+$", href):
-            paste_id = href.split("/")[-1]
-            results.append((paste_id, f"https://ghostbin.com{href}/raw"))
-    return results[:30]
-
-
-def _get_pasty_urls() -> list[tuple[str, str]]:
-    # pasty.lus.pm has a simple API
-    r = _safe_get("https://pasty.lus.pm/api/v2/pastes?limit=50")
-    if not r:
-        return []
-    try:
-        items = r.json()
-        if not isinstance(items, list):
-            items = items.get("pastes", [])
-        results = []
-        for item in items:
-            pid = item.get("id") or item.get("key", "")
-            if pid:
-                results.append((pid, f"https://pasty.lus.pm/{pid}/raw"))
-        return results[:50]
-    except Exception:
-        return []
+            results.append((paste_id, f"https://pastes.io/raw/{paste_id}"))
+    return results[:50]
 
 
 SOURCE_SCRAPERS = {
+    "pastebin": _get_pastebin_urls,
     "rentry":   _get_rentry_urls,
-    "hastebin": _get_hastebin_urls,
-    "ghostbin": _get_ghostbin_urls,
-    "pasty":    _get_pasty_urls,
+    "pastesio": _get_pastesio_urls,
 }
 
 
@@ -231,7 +215,7 @@ def probe_sources() -> dict:
 
 def run_paste_monitor(storage, single_run: bool = False) -> dict:
     """
-    Poll all paste sources and scan new pastes for PH patterns.
+    Poll all paste sources and scan new pastes for Nordic patterns.
     If single_run=True, poll all sources once and return.
     Returns summary dict.
     """
@@ -290,4 +274,3 @@ def run_paste_monitor(storage, single_run: bool = False) -> dict:
         "hits": total_hits,
         "timestamp": datetime.utcnow().isoformat(),
     }
-

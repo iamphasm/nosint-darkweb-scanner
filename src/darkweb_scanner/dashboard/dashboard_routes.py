@@ -11,7 +11,7 @@ import urllib3
 from datetime import datetime
 from pathlib import Path
 
-from flask import Blueprint, Response, jsonify, render_template, request, session
+from flask import Blueprint, Response, jsonify, redirect, render_template, request, session, url_for
 
 from ..auth import hash_password, require_login, validate_password_strength
 from .storage_helper import get_storage
@@ -70,6 +70,9 @@ def _load_keywords() -> dict:
 def index():
     storage = get_storage()
     user = storage.get_user_by_id(session["user_id"])
+    if user is None:
+        session.clear()
+        return redirect(url_for("auth.login"))
     return render_template("index.html", username=session.get("username"), is_admin=user.is_admin)
 
 
@@ -447,7 +450,7 @@ def api_keywords_generate():
 
     # ── Domain variants ──
     if domain:
-        bare = domain.split(".")[0]  # e.g. "philhealth" from "philhealth.gov.ph"
+        bare = domain.split(".")[0]  # e.g. "helsenorge" from "helsenorge.no"
         tld = ".".join(domain.split(".")[1:]) if "." in domain else ""
 
         results["brand_monitoring"].update([domain, bare])
@@ -482,12 +485,12 @@ def api_keywords_generate():
     industry_keywords = {
         "bank": ["swift", "iban", "routing number", "wire transfer", "core banking", "atm skimmer"],
         "healthcare": ["patient records", "ehr", "medical records", "hipaa", "phi"],
-        "government": [".gov.ph", "gsis", "philsys", "umid", "tin number"],
+        "government": [".gov.no", "norge", "personnummer", "folkeregister", "organisasjonsnummer"],
         "telco": ["sim swap", "imsi", "subscriber data", "cdr"],
         "insurance": ["policy data", "claims data", "insured"],
         "ecommerce": ["customer database", "order dump", "payment cards", "cvv"],
-        "bpo": ["bpo credentials", "agent credentials", "call center"],
-        "education": ["student records", "enrollment data", "lrn"],
+        "energy": ["oil platform", "offshore data", "statoil", "equinor", "power grid credentials"],
+        "education": ["student records", "enrollment data", "studentnummer", "ntnu.no", "lanekassen.no"],
     }
     if industry:
         industry_lower = industry.lower()
@@ -552,18 +555,20 @@ def api_crawl_start():
     if not keywords_path.exists():
         keywords_path = _Path("config/keywords.yaml")
 
-    if not seeds_path.exists():
-        return jsonify({"error": "No seeds file found. Add seeds in the Seeds tab first."}), 400
     if not keywords_path.exists():
         return jsonify({"error": "No keywords file found. Add keywords in the Keywords tab first."}), 400
 
-    seed_urls = [
-        line.strip()
-        for line in seeds_path.read_text().splitlines()
-        if line.strip() and not line.strip().startswith("#")
-    ]
+    seed_urls = []
+    if seeds_path.exists():
+        seed_urls = [
+            line.strip()
+            for line in seeds_path.read_text().splitlines()
+            if line.strip() and not line.strip().startswith("#")
+        ]
+    seed_urls = seed_urls + _load_clearnet_seeds()
+
     if not seed_urls:
-        return jsonify({"error": "Seeds file is empty. Add at least one .onion URL."}), 400
+        return jsonify({"error": "No seeds found. Add .onion or clearnet URLs in the Seeds tab."}), 400
 
     # Clear any stale stop flag
     if STOP_FLAG.exists():
@@ -625,7 +630,7 @@ def api_crawl_status():
             if not thread_alive:
                 from sqlalchemy import text as _text
                 with storage.get_session() as sess:
-                    sess.execute(_text("UPDATE crawl_sessions SET status='completed', ended_at=datetime('now') WHERE status='running'"))
+                    sess.execute(_text("UPDATE crawl_sessions SET status='completed', ended_at=NOW() WHERE status='running'"))
                     sess.commit()
         stats = storage.get_stats()
         active = storage.get_active_session()
@@ -864,6 +869,91 @@ def api_telegram_channels_delete():
         return jsonify({"ok": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# ── Telegram Scan API ─────────────────────────────────────────────────────────
+
+_active_telegram_thread = None
+
+
+@dashboard_bp.route("/api/telegram/scan", methods=["POST"])
+@require_login
+def api_telegram_scan_start():
+    import asyncio
+    import threading
+    from ..telegram_scraper import TelegramConfig, scrape_channels
+    from ..scanner import KeywordConfig
+    from ..alerting import Alerter
+
+    global _active_telegram_thread
+
+    if _active_telegram_thread and _active_telegram_thread.is_alive():
+        return jsonify({"error": "A Telegram scan is already running"}), 409
+
+    config = TelegramConfig.from_env()
+    if not config:
+        return jsonify({"error": "TELEGRAM_API_ID and TELEGRAM_API_HASH not set in .env"}), 400
+
+    # Override channels from file if present
+    channels = _load_channels()
+    if channels:
+        config.channels = channels
+
+    if not config.channels:
+        return jsonify({"error": "No Telegram channels configured. Add channels in the Seeds tab."}), 400
+
+    from pathlib import Path as _Path
+    session_file = _Path(config.session_path)
+    if not session_file.exists():
+        return jsonify({"error": f"Telegram session not found. Run: make telegram-auth first."}), 400
+
+    keywords_path = DATA_DIR / "keywords.yaml"
+    if not keywords_path.exists():
+        keywords_path = _Path("config/keywords.yaml")
+    if not keywords_path.exists():
+        return jsonify({"error": "No keywords file found."}), 400
+
+    storage = get_storage()
+
+    def run():
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            keyword_config = KeywordConfig.from_yaml(str(keywords_path))
+            scanner_obj = __import__(
+                "darkweb_scanner.scanner", fromlist=["Scanner"]
+            ).Scanner(keyword_config)
+            alerter = Alerter()
+            session_id = storage.create_crawl_session(
+                [f"telegram:{c}" for c in config.channels]
+            )
+            result = loop.run_until_complete(
+                scrape_channels(
+                    config=config,
+                    scanner=scanner_obj,
+                    storage=storage,
+                    alerter=alerter,
+                    session_id=session_id,
+                )
+            )
+            storage.update_crawl_session(
+                session_id, result["pages_scraped"], result["hits_found"], status="completed"
+            )
+        except Exception as e:
+            print(f"Telegram scan thread error: {e}", flush=True)
+        finally:
+            loop.close()
+
+    _active_telegram_thread = threading.Thread(target=run, daemon=True, name="telegram_thread")
+    _active_telegram_thread.start()
+    return jsonify({"ok": True, "message": f"Telegram scan started for {len(config.channels)} channel(s)."})
+
+
+@dashboard_bp.route("/api/telegram/scan/status", methods=["GET"])
+@require_login
+def api_telegram_scan_status():
+    running = _active_telegram_thread is not None and _active_telegram_thread.is_alive()
+    return jsonify({"running": running})
 
 
 # ── Sessions API ───────────────────────────────────────────────────────────────
@@ -3251,20 +3341,46 @@ def api_paste_stats():
     return jsonify(get_storage().get_paste_stats())
 
 
-@dashboard_bp.route("/api/paste/scan", methods=["POST"])
-@require_login
-def api_paste_scan():
-    """Trigger a one-shot paste scan (admin only)."""
-    storage = get_storage()
-    user = storage.get_user_by_id(session["user_id"])
-    if not user.is_admin:
-        return jsonify({"error": "Admin only"}), 403
+_paste_scan_thread = None
+_paste_scan_last: dict = {}
+
+
+def _run_paste_scan_background(storage):
+    """Run a paste scan in a background thread, updating _paste_scan_last."""
+    global _paste_scan_last
     try:
         from darkweb_scanner.paste_monitor import run_paste_monitor
         result = run_paste_monitor(storage, single_run=True)
-        return jsonify({"ok": True, **result})
+        _paste_scan_last = {"ok": True, **result}
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        _paste_scan_last = {"ok": False, "error": str(e)}
+
+
+@dashboard_bp.route("/api/paste/scan", methods=["POST"])
+@require_login
+def api_paste_scan():
+    """Trigger a paste scan in a background thread (admin only)."""
+    import threading
+    global _paste_scan_thread
+
+    if _paste_scan_thread and _paste_scan_thread.is_alive():
+        return jsonify({"error": "A paste scan is already running"}), 409
+
+    _paste_scan_thread = threading.Thread(
+        target=_run_paste_scan_background,
+        args=(get_storage(),),
+        daemon=True,
+        name="paste_scan_thread",
+    )
+    _paste_scan_thread.start()
+    return jsonify({"ok": True, "message": "Paste scan started."})
+
+
+@dashboard_bp.route("/api/paste/scan/status", methods=["GET"])
+@require_login
+def api_paste_scan_status():
+    running = _paste_scan_thread is not None and _paste_scan_thread.is_alive()
+    return jsonify({"running": running, "last": _paste_scan_last})
 
 
 # ── OSINT Toolkit Proxy Routes ────────────────────────────────────────────────
@@ -3284,6 +3400,9 @@ def _fetch_url(url, headers=None, timeout=10):
             return resp.status, resp.read()
     except urllib.error.HTTPError as e:
         return e.code, e.read()
+    except urllib.error.URLError as e:
+        import json as _json
+        return 503, _json.dumps({"error": f"Connection failed: {e.reason}"}).encode()
 
 
 @dashboard_bp.route("/api/osint/github/<username>")
@@ -3333,8 +3452,8 @@ def osint_reddit(username):
 @require_login
 def osint_discord(user_id):
     import json as _json
-    status, body = _fetch_url(f"https://discordlookup.mesalytic.moe/v1/user/{user_id}")
     try:
+        status, body = _fetch_url(f"https://discordlookup.mesalytic.moe/v1/user/{user_id}")
         return jsonify(_json.loads(body)), status
     except Exception as e:
         return jsonify({"error": str(e)}), 500

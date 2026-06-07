@@ -142,25 +142,17 @@ def api_cm_job_download(job_id: str):
     files = sorted([f for f in output_dir.rglob("*") if f.is_file()])
 
     def generate():
-        """Yield ZIP data using ZIP_STORED (no compression).
-        Photos/videos are already compressed — deflating wastes CPU and
-        delays the first byte sent to the browser."""
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w", zipfile.ZIP_STORED) as zf:
             for fpath in files:
                 arcname = str(fpath.relative_to(output_dir.parent))
                 zf.write(fpath, arcname)
-                buf.seek(0)
-                chunk = buf.read()
-                buf.seek(0)
-                buf.truncate(0)
-                if chunk:
-                    yield chunk
-        # Flush ZIP central directory / end record
         buf.seek(0)
-        remaining = buf.read()
-        if remaining:
-            yield remaining
+        while True:
+            chunk = buf.read(65536)
+            if not chunk:
+                break
+            yield chunk
 
     return Response(
         stream_with_context(generate()),

@@ -2,11 +2,34 @@
 Flask application factory — wires up auth + dashboard blueprints.
 """
 
+import logging
 import os
+import threading
+import time
 from datetime import timedelta
 
 from flask import Flask, redirect, url_for
 from werkzeug.middleware.proxy_fix import ProxyFix
+
+logger = logging.getLogger(__name__)
+
+PASTE_SCAN_INTERVAL = int(os.getenv("PASTE_SCAN_INTERVAL", "420"))  # 7 minutes default
+
+
+def _paste_monitor_loop():
+    """Background thread: run paste monitor every PASTE_SCAN_INTERVAL seconds."""
+    # Delay first run so the app has time to fully start
+    time.sleep(30)
+    while True:
+        try:
+            from darkweb_scanner.storage import Storage
+            from darkweb_scanner.dashboard.dashboard_routes import _run_paste_scan_background
+            logger.info("Paste monitor: scheduled scan starting...")
+            _run_paste_scan_background(Storage())
+            logger.info("Paste monitor: scheduled scan complete.")
+        except Exception as e:
+            logger.error(f"Paste monitor scheduler error: {e}")
+        time.sleep(PASTE_SCAN_INTERVAL)
 
 
 def create_app() -> Flask:
@@ -31,6 +54,11 @@ def create_app() -> Flask:
     @app.route("/")
     def root():
         return redirect(url_for("dashboard.index"))
+
+    # Start paste monitor background scheduler (runs every PASTE_SCAN_INTERVAL seconds)
+    t = threading.Thread(target=_paste_monitor_loop, daemon=True, name="paste_monitor_scheduler")
+    t.start()
+    logger.info(f"Paste monitor scheduler started (interval: {PASTE_SCAN_INTERVAL}s)")
 
     return app
 

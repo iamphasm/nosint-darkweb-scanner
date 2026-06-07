@@ -256,11 +256,24 @@ def telegram_scan(keywords: str, channels: str):
         sys.exit(1)
 
     if channels:
+        # Explicit --channels flag overrides everything
         config.channels = [c.strip().lstrip("@") for c in channels.split(",") if c.strip()]
+    else:
+        # Load from dashboard-managed file if present
+        channels_file = Path("/app/data/telegram_channels.txt")
+        if channels_file.exists():
+            file_channels = [
+                line.strip().lstrip("@")
+                for line in channels_file.read_text().splitlines()
+                if line.strip() and not line.strip().startswith("#")
+            ]
+            if file_channels:
+                config.channels = file_channels
 
     if not config.channels:
         click.echo(
-            "ERROR: No channels specified. Set TELEGRAM_CHANNELS in .env or use --channels",
+            "ERROR: No channels specified. Add channels via the dashboard Seeds tab "
+            "or set TELEGRAM_CHANNELS in .env",
             err=True,
         )
         sys.exit(1)
