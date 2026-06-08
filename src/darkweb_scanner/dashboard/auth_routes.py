@@ -111,7 +111,9 @@ def login():
         if getattr(user, "must_change_password", False):
             session["must_change_password"] = True
             return redirect(url_for("auth.force_change_password"))
-        next_url = request.args.get("next") or url_for("dashboard.index")
+        next_url = request.args.get("next") or ""
+        if not next_url.startswith("/"):
+            next_url = url_for("dashboard.index")
         return redirect(next_url)
 
     return render_template("login.html", oauth_providers=oauth_providers)
@@ -181,7 +183,9 @@ def totp_verify():
 
         login_user(user.id, user.username)
         storage.update_user_login(user.id)
-        next_url = request.args.get("next") or url_for("dashboard.index")
+        next_url = request.args.get("next") or ""
+        if not next_url.startswith("/"):
+            next_url = url_for("dashboard.index")
         return redirect(next_url)
 
     return render_template("totp_verify.html", username=session.get("totp_pending_username"))
@@ -255,16 +259,46 @@ def oauth_callback(provider):
         flash("OAuth login failed — no access token.", "error")
         return redirect(url_for("auth.login"))
 
-    # Apple sends user info in the ID token, not a userinfo endpoint
+    # Apple sends user info in the ID token, not a userinfo endpoint.
+    # We verify the RS256 signature against Apple's public keys before trusting the payload.
     if provider == "apple":
         import base64, json as _json
         id_token = token_resp.json().get("id_token", "")
-        try:
-            payload = id_token.split(".")[1]
-            payload += "=" * (4 - len(payload) % 4)
-            userinfo = _json.loads(base64.urlsafe_b64decode(payload))
-        except Exception:
-            userinfo = {}
+        userinfo = {}
+        if id_token:
+            try:
+                import urllib.request as _urllib
+                jwks_data = _json.loads(_urllib.urlopen(
+                    "https://appleid.apple.com/auth/keys", timeout=5
+                ).read())
+                # Find the matching key by kid in the JWT header
+                header_raw = id_token.split(".")[0]
+                header_raw += "=" * (4 - len(header_raw) % 4)
+                header = _json.loads(base64.urlsafe_b64decode(header_raw))
+                kid = header.get("kid")
+                matching_key = next(
+                    (k for k in jwks_data.get("keys", []) if k.get("kid") == kid), None
+                )
+                if matching_key is None:
+                    raise ValueError("No matching Apple public key found for kid")
+                # Verify signature using PyJWT if available, otherwise refuse
+                try:
+                    import jwt as _jwt
+                    from jwt.algorithms import RSAAlgorithm
+                    public_key = RSAAlgorithm.from_jwk(_json.dumps(matching_key))
+                    userinfo = _jwt.decode(
+                        id_token, public_key,
+                        algorithms=["RS256"],
+                        audience=p["client_id"],
+                    )
+                except ImportError:
+                    logger.error("PyJWT not installed — cannot verify Apple id_token signature. Install PyJWT to enable Apple OAuth.")
+                    flash("Apple OAuth requires PyJWT. Contact your administrator.", "error")
+                    return redirect(url_for("auth.login"))
+            except Exception as e:
+                logger.error(f"Apple id_token verification failed: {e}")
+                flash("Apple OAuth login failed — could not verify token.", "error")
+                return redirect(url_for("auth.login"))
     elif p.get("userinfo_url"):
         try:
             userinfo = http_requests.get(

@@ -185,7 +185,8 @@ class Crawler:
                     continue
 
                 domain = self._get_domain(url)
-                self._domain_counts[domain] = self._domain_counts.get(domain, 0) + 1
+                if not result.error:
+                    self._domain_counts[domain] = self._domain_counts.get(domain, 0) + 1
 
                 yield result
 

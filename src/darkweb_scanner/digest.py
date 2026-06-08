@@ -4,6 +4,7 @@ Separate from the crawl intelligence report (api/report/pdf).
 API keys loaded from environment only — never hardcoded.
 """
 
+import html as _html
 import logging
 import os
 from datetime import datetime, timezone
@@ -36,6 +37,10 @@ def load_subscribers() -> list[str]:
 
 def add_subscriber(email: str, name: str = "", org: str = "") -> bool:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+    # Strip newlines/tabs to prevent injection into the flat-file store
+    email = email.replace("\n", "").replace("\r", "").replace("\t", "")
+    name  = name.replace("\n", "").replace("\r", "").replace("\t", "")
+    org   = org.replace("\n", "").replace("\r", "").replace("\t", "")
     existing = load_subscribers()
     if email in existing:
         return False
@@ -282,13 +287,14 @@ def build_email_html(feed_data: dict, date_str: str, stats: dict) -> str:  # noq
     kev_row_parts = []
     for i, v in enumerate(kev[:8]):
         row_bg = "#fff8f8" if i % 2 == 0 else "#ffffff"
-        cve_url = f"https://nvd.nist.gov/vuln/detail/{v['cve']}"
+        cve_id = _html.escape(v["cve"])
+        cve_url = f"https://nvd.nist.gov/vuln/detail/{cve_id}"
         kev_row_parts.append(
             f'<tr style="background:{row_bg}">'
             f'<td style="padding:6px 10px;font-size:11px;font-family:monospace;border-bottom:1px solid #d0d7de">'
-            f'<a href="{cve_url}" style="color:#f85149;text-decoration:none">{v["cve"]}</a></td>'
-            f'<td style="padding:6px 10px;font-size:11px;border-bottom:1px solid #d0d7de">{v["title"][:60]}</td>'
-            f'<td style="padding:6px 10px;font-size:11px;color:#57606a;border-bottom:1px solid #d0d7de">{v["vendor"]}</td>'
+            f'<a href="{cve_url}" style="color:#f85149;text-decoration:none">{cve_id}</a></td>'
+            f'<td style="padding:6px 10px;font-size:11px;border-bottom:1px solid #d0d7de">{_html.escape(v["title"][:60])}</td>'
+            f'<td style="padding:6px 10px;font-size:11px;color:#57606a;border-bottom:1px solid #d0d7de">{_html.escape(v["vendor"])}</td>'
             f'</tr>'
         )
     kev_rows = "".join(kev_row_parts)
@@ -297,10 +303,10 @@ def build_email_html(feed_data: dict, date_str: str, stats: dict) -> str:  # noq
         rows = ""
         for item in items:
             bg = "#fff8f8" if highlight else "#ffffff"
-            title = item.get("title", "")[:100]
-            desc = (item.get("description", "") or "")[:200]
-            source = item.get("source", "")
-            url = item.get("url", "")
+            title = _html.escape(item.get("title", "")[:100])
+            desc = _html.escape((item.get("description", "") or "")[:200])
+            source = _html.escape(item.get("source", ""))
+            url = _html.escape(item.get("url", ""))
             read_more = (
                 f' \u00b7 <a href="{url}" style="color:#58a6ff;text-decoration:none">Read more \u2192</a>'
                 if url else ""

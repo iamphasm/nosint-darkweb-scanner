@@ -36,7 +36,7 @@ POLL_HEADERS = {
 
 NORDIC_PATTERNS = {
     # Norwegian mobile: +47 followed by 8 digits starting with 4 or 9
-    "nordic_mobile":    re.compile(r'(\+47[\s-]?)?[49]\d{7}\b'),
+    "nordic_mobile":    re.compile(r'(\+47[\s-]?)?\b[49]\d{7}\b'),
     # Nordic country-code TLDs
     "nordic_tld":       re.compile(r'\b[\w.-]+\.(no|se|dk|fi|is)\b', re.IGNORECASE),
     # Norwegian government/municipality domains

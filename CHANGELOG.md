@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 The format follows **Keep a Changelog**. This project adheres to **Semantic Versioning**.
 
+## [1.0.3] - 2026-06-08
+
+### Security
+- **Open redirect fix** (`auth_routes.py`) — `next` parameter now validated to start with `/`; invalid values fall back to dashboard index
+- **Apple OAuth JWT verification** (`auth_routes.py`) — replaced no-op `pass` with real RS256 signature verification via Apple JWKS endpoint; unauthenticated logins now blocked
+- **XSS fix** (`digest.py`) — all feed-sourced strings (titles, URLs, descriptions) escaped with `html.escape()` in generated digest emails
+- **Newline injection fix** (`digest.py`) — subscriber email/name/org fields stripped of `\n`/`\r`/`\t` before writing to mailing list file
+
+### Fixed
+- **SQL dialect compatibility** (`dashboard_routes.py`) — replaced `NOW()` (PostgreSQL) with `CURRENT_TIMESTAMP` (SQLite-compatible)
+- **Domain prefix stripping bug** (`dashboard_routes.py`) — replaced `lstrip('www.')` / `lstrip('http://')` (character-set strip) with proper `startswith()` + slice logic
+- **IPv6 validation** (`dashboard_routes.py`) — replaced loose `[0-9a-fA-F:]+` regex with `ipaddress.ip_address()` stdlib validation
+- **Thread-unsafe global print monkey-patch** (`channel_monitor_routes.py`) — removed `builtins.print` override; log function now passed explicitly via `log_fn` parameter
+- **Crawler domain counter on errors** (`crawler.py`) — `_domain_counts` no longer incremented when a fetch returns an error
+- **Nordic mobile regex false matches** (`paste_monitor.py`) — added left word boundary `\b` to `nordic_mobile` pattern to prevent matching last 8 digits of longer digit strings
+
 ## [1.0.2] - 2026-04-03
 
 ### Changed

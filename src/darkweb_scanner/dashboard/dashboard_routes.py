@@ -413,7 +413,14 @@ def api_keywords_generate():
     """Rule-based keyword generator — zero API cost."""
     body = request.get_json() or {}
     name = (body.get("name") or "").strip()
-    domain = (body.get("domain") or "").strip().lower().lstrip("www.").lstrip("https://").lstrip("http://").split("/")[0]
+    _raw_domain = (body.get("domain") or "").strip().lower()
+    for _prefix in ("https://", "http://"):
+        if _raw_domain.startswith(_prefix):
+            _raw_domain = _raw_domain[len(_prefix):]
+    _raw_domain = _raw_domain.split("/")[0]
+    if _raw_domain.startswith("www."):
+        _raw_domain = _raw_domain[4:]
+    domain = _raw_domain
     industry = (body.get("industry") or "").strip()
     context = (body.get("context") or "").strip()
 
@@ -630,7 +637,7 @@ def api_crawl_status():
             if not thread_alive:
                 from sqlalchemy import text as _text
                 with storage.get_session() as sess:
-                    sess.execute(_text("UPDATE crawl_sessions SET status='completed', ended_at=NOW() WHERE status='running'"))
+                    sess.execute(_text("UPDATE crawl_sessions SET status='completed', ended_at=CURRENT_TIMESTAMP WHERE status='running'"))
                     sess.commit()
         stats = storage.get_stats()
         active = storage.get_active_session()
@@ -1316,15 +1323,15 @@ def api_ip_investigations_list():
 @dashboard_bp.route("/api/ip-investigations", methods=["POST"])
 @require_login
 def api_ip_investigations_create():
-    import re
+    import ipaddress
     from ..ip_lookup import investigate_ip
 
     body = request.get_json()
     ip = (body.get("ip") or "").strip()
 
-    ipv4 = re.compile(r"^(\d{1,3}\.){3}\d{1,3}$")
-    ipv6 = re.compile(r"^[0-9a-fA-F:]+$")
-    if not ip or (not ipv4.match(ip) and not ipv6.match(ip)):
+    try:
+        ipaddress.ip_address(ip)
+    except ValueError:
         return jsonify({"error": "Invalid IP address"}), 400
 
     abuse_key = os.getenv("ABUSEIPDB_API_KEY", "")

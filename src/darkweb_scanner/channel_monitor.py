@@ -389,11 +389,12 @@ def generate_html(messages, channel_title, output_path):
 # ─── CHANNEL PROCESSOR ─────────────────────────────────────────────────────────
 async def process_channel(client, channel_id, limit, output_dir,
                            days=None, min_space_gb=1.0, max_video_mb=50,
-                           forced_lang=None, skip_english=False):
+                           forced_lang=None, skip_english=False, log_fn=None):
+    _log = log_fn or print
     try:
         channel = await client.get_entity(channel_id)
     except Exception as e:
-        print(f"[!] Could not access '{channel_id}': {e}")
+        _log(f"[!] Could not access '{channel_id}': {e}")
         return
 
     channel_title = getattr(channel, "title", str(channel_id))
@@ -407,10 +408,10 @@ async def process_channel(client, channel_id, limit, output_dir,
     cutoff_date = None
     if days:
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
-        print(f"[i] Fetching since: {cutoff_date.strftime('%Y-%m-%d %H:%M UTC')} ({days} days back)")
+        _log(f"[i] Fetching since: {cutoff_date.strftime('%Y-%m-%d %H:%M UTC')} ({days} days back)")
 
     lang_mode = f"forced={forced_lang}" if forced_lang else "auto-detect"
-    print(f"\n[+] Processing: {channel_title} | lang: {lang_mode}")
+    _log(f"\n[+] Processing: {channel_title} | lang: {lang_mode}")
 
     results     = []
     fetch_limit = None if limit == 0 else limit
@@ -419,11 +420,11 @@ async def process_channel(client, channel_id, limit, output_dir,
     async for message in client.iter_messages(channel, limit=fetch_limit):
 
         if cutoff_date and message.date < cutoff_date:
-            print(f"  [i] Reached cutoff date. Stopping.")
+            _log(f"  [i] Reached cutoff date. Stopping.")
             break
 
         if not assert_disk_space(min_space_gb, str(output_dir)):
-            print(f"  [i] Partial results saved up to #{message.id}")
+            _log(f"  [i] Partial results saved up to #{message.id}")
             break
 
         entry = {
@@ -470,9 +471,9 @@ async def process_channel(client, channel_id, limit, output_dir,
                         filename = media_dir / f"{message.id}.jpg"
                         await client.download_media(message, file=str(filename))
                         entry["media_path"] = f"media/{message.id}.jpg"
-                        print(f"  [+] Photo: {filename.name}")
+                        _log(f"  [+] Photo: {filename.name}")
                     except Exception as e:
-                        print(f"  [!] Photo error: {e}")
+                        _log(f"  [!] Photo error: {e}")
 
             elif isinstance(message.media, MessageMediaDocument):
                 doc  = message.media.document
@@ -487,7 +488,7 @@ async def process_channel(client, channel_id, limit, output_dir,
                             await client.download_media(message, file=str(filename))
                             entry["media_path"] = f"media/{message.id}.{ext}"
                         except Exception as e:
-                            print(f"  [!] Image error: {e}")
+                            _log(f"  [!] Image error: {e}")
 
                 elif mime.startswith("video/"):
                     entry["media_type"] = "video"
@@ -496,18 +497,18 @@ async def process_channel(client, channel_id, limit, output_dir,
                     file_size_mb = getattr(doc, "size", 0) / (1024 * 1024)
 
                     if max_video_mb == 0:
-                        print(f"  [i] Video skipped (--max-video-mb 0)")
+                        _log(f"  [i] Video skipped (--max-video-mb 0)")
                     elif file_size_mb > max_video_mb:
-                        print(f"  [!] Video skipped — {file_size_mb:.1f} MB > limit {max_video_mb} MB")
+                        _log(f"  [!] Video skipped — {file_size_mb:.1f} MB > limit {max_video_mb} MB")
                     elif assert_disk_space(min_space_gb, str(output_dir)):
                         try:
                             filename = media_dir / f"{message.id}.{ext}"
-                            print(f"  [~] Video ({file_size_mb:.1f} MB): {filename.name} ...")
+                            _log(f"  [~] Video ({file_size_mb:.1f} MB): {filename.name} ...")
                             await client.download_media(message, file=str(filename))
                             entry["media_path"] = f"media/{message.id}.{ext}"
-                            print(f"  [+] Video saved: {filename.name}")
+                            _log(f"  [+] Video saved: {filename.name}")
                         except Exception as e:
-                            print(f"  [!] Video error: {e}")
+                            _log(f"  [!] Video error: {e}")
                 else:
                     entry["media_type"] = f"document ({mime})"
 
@@ -518,7 +519,7 @@ async def process_channel(client, channel_id, limit, output_dir,
 
         results.append(entry)
         lang_label = get_lang_display(entry["detected_lang"])
-        print(f"  [MSG {message.id}] {entry['date']} | {lang_label} | {entry['media_type'] or 'text'}")
+        _log(f"  [MSG {message.id}] {entry['date']} | {lang_label} | {entry['media_type'] or 'text'}")
 
     # ── SAVE OUTPUTS ───────────────────────────────────────────────────────────
     json_path = channel_dir / "messages.json"
@@ -530,12 +531,12 @@ async def process_channel(client, channel_id, limit, output_dir,
     generate_html(results, channel_title, html_path)
 
     # Language breakdown summary
-    print(f"\n  [✓] {len(results)} messages saved → {channel_dir}/")
+    _log(f"\n  [✓] {len(results)} messages saved → {channel_dir}/")
     if lang_stats:
-        print(f"  [i] Language breakdown:")
+        _log(f"  [i] Language breakdown:")
         for lang, count in sorted(lang_stats.items(), key=lambda x: -x[1]):
-            print(f"       {get_lang_display(lang):<30} {count} messages")
-    print(f"  [✓] Open: firefox {html_path}")
+            _log(f"       {get_lang_display(lang):<30} {count} messages")
+    _log(f"  [✓] Open: firefox {html_path}")
 
 
 # ─── MAIN ──────────────────────────────────────────────────────────────────────

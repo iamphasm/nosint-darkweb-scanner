@@ -307,17 +307,6 @@ async def _run_channel_monitor(job_id: str, config: dict, output_dir: Path, cred
         return
 
     try:
-        # Monkey-patch print so we capture output into job log
-        import builtins
-        _orig_print = builtins.print
-
-        def _log_print(*args, **kwargs):
-            msg = " ".join(str(a) for a in args)
-            log(msg)
-            _orig_print(*args, **kwargs)
-
-        builtins.print = _log_print
-
         await process_channel(
             client=client,
             channel_id=config["channel"],
@@ -328,6 +317,7 @@ async def _run_channel_monitor(job_id: str, config: dict, output_dir: Path, cred
             max_video_mb=config["max_video_mb"],
             forced_lang=config["lang"],
             skip_english=config["skip_english"],
+            log_fn=log,
         )
     except Exception as e:
         import traceback
@@ -341,7 +331,6 @@ async def _run_channel_monitor(job_id: str, config: dict, output_dir: Path, cred
             _jobs[job_id]["status"] = "completed"
         log("[✓] Scan completed successfully. Click Download to get results.")
     finally:
-        builtins.print = _orig_print
         with _jobs_lock:
             _jobs[job_id]["ended_at"] = datetime.utcnow().isoformat()
         try:
