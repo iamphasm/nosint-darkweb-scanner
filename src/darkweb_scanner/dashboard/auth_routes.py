@@ -4,7 +4,7 @@ Auth blueprint — login, register, TOTP setup/verify, OAuth, logout.
 
 import logging
 import secrets
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 
 import requests as http_requests
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
@@ -112,7 +112,8 @@ def login():
             session["must_change_password"] = True
             return redirect(url_for("auth.force_change_password"))
         next_url = request.args.get("next") or ""
-        if not next_url.startswith("/"):
+        _p = urlparse(next_url)
+        if not next_url or _p.scheme or _p.netloc or not next_url.startswith("/") or next_url.startswith("//"):
             next_url = url_for("dashboard.index")
         return redirect(next_url)
 
@@ -184,7 +185,8 @@ def totp_verify():
         login_user(user.id, user.username)
         storage.update_user_login(user.id)
         next_url = request.args.get("next") or ""
-        if not next_url.startswith("/"):
+        _p = urlparse(next_url)
+        if not next_url or _p.scheme or _p.netloc or not next_url.startswith("/") or next_url.startswith("//"):
             next_url = url_for("dashboard.index")
         return redirect(next_url)
 
